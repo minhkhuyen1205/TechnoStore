@@ -62,6 +62,15 @@ function initAdminPortal(options = {}) {
   let catSearchQuery = '';
   let receiptSearchQuery = '';
   let orderSearchQuery = '';
+  const adminPageSize = 10;
+  const currentPageByTab = {
+    users: 1,
+    products: 1,
+    receipts: 1,
+    pricing: 1,
+    orders: 1,
+    stock: 1
+  };
 
   const navItems = [
     { id: 'dash', label: 'Tổng quan', icon: 'tong-quan.svg' },
@@ -73,6 +82,55 @@ function initAdminPortal(options = {}) {
     { id: 'orders', label: 'Đơn hàng', icon: 'gio-hang.svg' },
     { id: 'stock', label: 'Tồn kho', icon: 'kho.svg' },
   ];
+
+  function paginateAdminList(tab, list) {
+    const totalPages = Math.max(1, Math.ceil(list.length / adminPageSize));
+    currentPageByTab[tab] = Math.min(Math.max(currentPageByTab[tab] || 1, 1), totalPages);
+    const currentPage = currentPageByTab[tab];
+    return {
+      items: list.slice((currentPage - 1) * adminPageSize, currentPage * adminPageSize),
+      total: list.length,
+      currentPage,
+      totalPages
+    };
+  }
+
+  function renderAdminPagination(tab, list, unitName) {
+    const page = paginateAdminList(tab, list);
+    const rangeText = page.total === 0
+      ? 'Hiển thị 0 kết quả'
+      : `Hiển thị ${(page.currentPage - 1) * adminPageSize + 1} - ${Math.min(page.currentPage * adminPageSize, page.total)} trong ${page.total} ${unitName}`;
+    const paginationButtons = page.totalPages <= 1 ? '' : `
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button type="button" onclick="changeAdminPage('${tab}', ${page.currentPage - 1})" ${page.currentPage === 1 ? 'disabled' : ''} aria-label="Trang trước" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid var(--color-line); border-radius: 6px; background: var(--color-white); cursor: ${page.currentPage === 1 ? 'not-allowed' : 'pointer'}; opacity: ${page.currentPage === 1 ? '0.45' : '1'};">
+          <img src="${iconPath}chevron-left.svg" class="icon icon-16" alt="Trang trước" />
+        </button>
+        ${Array.from({ length: page.totalPages }, (_, index) => index + 1).map(pageNumber => `
+          <button type="button" onclick="changeAdminPage('${tab}', ${pageNumber})" aria-current="${pageNumber === page.currentPage ? 'page' : 'false'}" style="min-width: 34px; height: 34px; padding: 0 8px; border: 1px solid ${pageNumber === page.currentPage ? 'var(--color-ink)' : 'var(--color-line)'}; border-radius: 6px; background: ${pageNumber === page.currentPage ? 'var(--color-ink)' : 'var(--color-white)'}; color: ${pageNumber === page.currentPage ? 'var(--color-white)' : 'var(--color-ink)'}; cursor: pointer;">
+            ${pageNumber}
+          </button>
+        `).join('')}
+        <button type="button" onclick="changeAdminPage('${tab}', ${page.currentPage + 1})" ${page.currentPage === page.totalPages ? 'disabled' : ''} aria-label="Trang sau" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid var(--color-line); border-radius: 6px; background: var(--color-white); cursor: ${page.currentPage === page.totalPages ? 'not-allowed' : 'pointer'}; opacity: ${page.currentPage === page.totalPages ? '0.45' : '1'};">
+          <img src="${iconPath}chevron-right.svg" class="icon icon-16" alt="Trang sau" />
+        </button>
+      </div>
+    `;
+
+    return `
+      <div id="${tab}PaginationFooter" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px; font-size: 14px; color: var(--color-ink-3);">
+        <span>${rangeText}</span>
+        ${paginationButtons}
+      </div>
+    `;
+  }
+
+  function refreshAdminTable(tab, list, tbodyId, rowRenderer, unitName) {
+    const tbody = document.getElementById(tbodyId);
+    const footer = document.getElementById(`${tab}PaginationFooter`);
+    const page = paginateAdminList(tab, list);
+    if (tbody) tbody.innerHTML = rowRenderer(page.items);
+    if (footer) footer.outerHTML = renderAdminPagination(tab, list, unitName);
+  }
 
   // ==========================================================================
   // RENDER GIAO DIỆN CHÍNH
@@ -339,6 +397,7 @@ function initAdminPortal(options = {}) {
       const q = userSearchQuery.toLowerCase();
       list = list.filter(c => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q));
     }
+    const page = paginateAdminList('users', list);
 
     return `
       ${userMessage ? `
@@ -376,14 +435,12 @@ function initAdminPortal(options = {}) {
             </tr>
           </thead>
           <tbody id="userTableBody">
-            ${generateUserRows(list)}
+            ${generateUserRows(page.items)}
           </tbody>
         </table>
       </div>
 
-      <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--color-ink-3);">
-        <span id="userCountLabel">Hiển thị ${list.length} bản ghi</span>
-      </div>
+      ${renderAdminPagination('users', list, 'khách hàng')}
     `;
   }
 
@@ -561,7 +618,7 @@ function initAdminPortal(options = {}) {
       return `
         <tr>
           <td>
-            <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
               <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: var(--color-surface); display: grid; place-items: center; flex-shrink: 0; overflow: hidden;">
                 ${p.image ? `<img src="${p.image}" style="max-width:100%; max-height:100%; object-fit:contain;" alt="" />` : renderDeviceArt(p, 'height:38px; width:auto;')}
               </div>
@@ -617,6 +674,7 @@ function initAdminPortal(options = {}) {
         (p.variants && p.variants.some(v => v.sku.toLowerCase().includes(q) || v.color.toLowerCase().includes(q)))
       );
     }
+    const page = paginateAdminList('products', list);
 
     return `
       <div class="admin-toolbar">
@@ -643,7 +701,7 @@ function initAdminPortal(options = {}) {
         <table class="data-table">
           <thead>
             <tr>
-              <th>Sản phẩm</th>
+              <th class="text-center">Sản phẩm</th>
               <th>Danh mục</th>
               <th>Hãng</th>
               <th class="text-right">Giá bán</th>
@@ -653,14 +711,12 @@ function initAdminPortal(options = {}) {
             </tr>
           </thead>
           <tbody id="prodTableBody">
-            ${generateProductRows(list)}
+            ${generateProductRows(page.items)}
           </tbody>
         </table>
       </div>
 
-      <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--color-ink-3); margin-top: 12px;">
-        <span id="prodCountLabel">Hiển thị ${list.length} bản ghi</span>
-      </div>
+      ${renderAdminPagination('products', list, 'sản phẩm')}
     `;
   }
 
@@ -1204,6 +1260,7 @@ function initAdminPortal(options = {}) {
         (r.date && r.date.toLowerCase().includes(q))
       );
     }
+    const page = paginateAdminList('receipts', list);
 
     // Danh sách các dòng biến thể trong Modal Nhập Hàng
     const receiptLinesHtml = receiptModalItems.map((item, idx) => {
@@ -1325,14 +1382,12 @@ function initAdminPortal(options = {}) {
             </tr>
           </thead>
           <tbody id="receiptTableBody">
-            ${generateReceiptRows(list)}
+            ${generateReceiptRows(page.items)}
           </tbody>
         </table>
       </div>
 
-      <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--color-ink-3); margin-top: 12px;">
-        <span id="receiptCountLabel">Hiển thị ${list.length} bản ghi</span>
-      </div>
+      ${renderAdminPagination('receipts', list, 'phiếu nhập')}
 
       <!-- Receipt Modal (Phiếu Nhập Hàng) -->
       ${showReceiptModal ? `
@@ -1492,9 +1547,10 @@ function initAdminPortal(options = {}) {
   // ==========================================================================
   function renderPricing() {
     const activeProds = products.filter(p => !p.isDeleted);
+    const page = paginateAdminList('pricing', activeProds);
     const iconPath_p = `${basePath}assets/icon/`;
 
-    const rowsHtml = activeProds.map(p => {
+    const rowsHtml = page.items.map(p => {
       const isExpanded = Boolean(expandedPricing[p.id]);
       const isEditing = editingPricingId === p.id;
       const variantList = p.variants || [];
@@ -1574,7 +1630,7 @@ function initAdminPortal(options = {}) {
           style="cursor: pointer;"
         >
           <td>
-            <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
               <span class="accordion-caret" style="font-size:12px; color:var(--color-brand-500); transition:transform 0.2s; display:inline-block; transform: ${isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'};">&#9658;</span>
               <div>
                 <div style="font-weight: 600; color: var(--color-ink); font-size: 14px;">${p.name}</div>
@@ -1658,7 +1714,7 @@ function initAdminPortal(options = {}) {
         <table class="data-table">
           <thead>
             <tr>
-              <th>Sản phẩm</th>
+              <th class="text-center">Sản phẩm</th>
               <th class="text-center">Giá vốn</th>
               <th class="text-center">Giá bán</th>
               <th class="text-center">Số lượng Phiên bản</th>
@@ -1671,9 +1727,7 @@ function initAdminPortal(options = {}) {
         </table>
       </div>
 
-      <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--color-ink-3); margin-top: 12px;">
-        <span id="pricingCountLabel">Hiển thị ${activeProds.length} bản ghi</span>
-      </div>
+      ${renderAdminPagination('pricing', activeProds, 'sản phẩm')}
     `;
   }
 
@@ -1728,6 +1782,7 @@ function initAdminPortal(options = {}) {
         (o.phone && o.phone.replace(/\s+/g, '').includes(q.replace(/\s+/g, '')))
       );
     }
+    const page = paginateAdminList('orders', list);
 
     const statuses = ['Mới đặt', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã huỷ'];
 
@@ -1769,14 +1824,12 @@ function initAdminPortal(options = {}) {
             </tr>
           </thead>
           <tbody id="orderTableBody">
-            ${generateOrderRows(list)}
+            ${generateOrderRows(page.items)}
           </tbody>
         </table>
       </div>
 
-      <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--color-ink-3); margin-top: 12px;">
-        <span id="orderCountLabel">Hiển thị ${list.length} bản ghi</span>
-      </div>
+      ${renderAdminPagination('orders', list, 'đơn hàng')}
 
       <!-- Order Detail Modal -->
       ${selectedOrderModal ? `
@@ -1849,13 +1902,14 @@ function initAdminPortal(options = {}) {
     if (stockOnlyLow) {
       list = list.filter(p => p.left <= 10);
     }
+    const page = paginateAdminList('stock', list);
 
     // Đếm chính xác số sản phẩm Đã hết hàng (= 0) và Sắp hết hàng (0 < stock <= 10)
     const activeList = products.filter(p => !p.isDeleted);
     const outOfStockCount = activeList.filter(p => (Number(p.stock) || 0) <= 0).length;
     const lowStockCount = activeList.filter(p => (Number(p.stock) || 0) > 0 && (Number(p.stock) || 0) <= 10).length;
 
-    const rowsHtml = list.map(p => {
+    const rowsHtml = page.items.map(p => {
       const stock = Number(p.left != null ? p.left : p.stock) || 0;
       // Thứ tự kiểm tra: Hết hàng (= 0) -> Sắp hết hàng (0 < stock <= 10) -> Còn hàng (> 10)
       const isOut = stock === 0;
@@ -1926,7 +1980,7 @@ function initAdminPortal(options = {}) {
           <thead>
             <tr>
               <th>Mã</th>
-              <th>Sản phẩm & Chi tiết biến thể</th>
+              <th>Sản phẩm & Phiên bản</th>
               <th class="text-center">Tổng nhập</th>
               <th class="text-center">Đã bán</th>
               <th class="text-center">Tồn kho thực tế</th>
@@ -1939,9 +1993,7 @@ function initAdminPortal(options = {}) {
         </table>
       </div>
 
-      <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--color-ink-3); margin-top: 12px;">
-        <span id="stockCountLabel">Hiển thị ${list.length} bản ghi</span>
-      </div>
+      ${renderAdminPagination('stock', list, 'sản phẩm')}
     `;
   }
 
@@ -1949,10 +2001,19 @@ function initAdminPortal(options = {}) {
   // EVENT HANDLERS & CALLBACKS
   // ==========================================================================
 
+  window.changeAdminPage = (tab, page) => {
+    if (!Object.prototype.hasOwnProperty.call(currentPageByTab, tab)) return;
+    currentPageByTab[tab] = page;
+    render();
+  };
+
   window.switchAdminTab = (tab) => {
     // Tự động map alias tab 'prices' về 'pricing' (Giá bán)
     if (tab === 'prices') tab = 'pricing';
     currentTab = tab;
+    if (Object.prototype.hasOwnProperty.call(currentPageByTab, tab)) {
+      currentPageByTab[tab] = 1;
+    }
     showProductForm = false;
     showCategoryModal = false;
     showReceiptModal = false;
@@ -1991,37 +2052,29 @@ function initAdminPortal(options = {}) {
   // --------------------------------------------------------------------------
   window.handleProdSearch = (val) => {
     prodSearchQuery = val;
-    const tbody = document.getElementById('prodTableBody');
-    const countLabel = document.getElementById('prodCountLabel');
-    if (tbody) {
-      let list = products.filter(p => !p.isDeleted);
-      if (prodSearchQuery) {
-        const q = prodSearchQuery.toLowerCase();
-        list = list.filter(p =>
-          p.name.toLowerCase().includes(q) ||
-          p.code.toLowerCase().includes(q) ||
-          p.brand.toLowerCase().includes(q) ||
-          (p.variants && p.variants.some(v => v.sku.toLowerCase().includes(q) || v.color.toLowerCase().includes(q)))
-        );
-      }
-      tbody.innerHTML = generateProductRows(list);
-      if (countLabel) countLabel.textContent = `Hiển thị ${list.length} bản ghi`;
+    currentPageByTab.products = 1;
+    let list = products.filter(p => !p.isDeleted);
+    if (prodSearchQuery) {
+      const q = prodSearchQuery.toLowerCase();
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.code.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        (p.variants && p.variants.some(v => v.sku.toLowerCase().includes(q) || v.color.toLowerCase().includes(q)))
+      );
     }
+    refreshAdminTable('products', list, 'prodTableBody', generateProductRows, 'sản phẩm');
   };
 
   window.handleUserSearch = (val) => {
     userSearchQuery = val;
-    const tbody = document.getElementById('userTableBody');
-    const countLabel = document.getElementById('userCountLabel');
-    if (tbody) {
-      let list = customers;
-      if (userSearchQuery) {
-        const q = userSearchQuery.toLowerCase();
-        list = list.filter(c => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q));
-      }
-      tbody.innerHTML = generateUserRows(list);
-      if (countLabel) countLabel.textContent = `Hiển thị ${list.length} bản ghi`;
+    currentPageByTab.users = 1;
+    let list = customers;
+    if (userSearchQuery) {
+      const q = userSearchQuery.toLowerCase();
+      list = list.filter(c => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q));
     }
+    refreshAdminTable('users', list, 'userTableBody', generateUserRows, 'khách hàng');
   };
 
   window.handleCatSearch = (val) => {
@@ -2049,42 +2102,34 @@ function initAdminPortal(options = {}) {
 
   window.handleReceiptSearch = (val) => {
     receiptSearchQuery = val;
-    const tbody = document.getElementById('receiptTableBody');
-    const countLabel = document.getElementById('receiptCountLabel');
-    if (tbody) {
-      let list = receipts;
-      if (receiptSearchQuery) {
-        const q = receiptSearchQuery.toLowerCase().trim();
-        list = list.filter(r =>
-          (r.id && r.id.toLowerCase().includes(q)) ||
-          (r.date && r.date.toLowerCase().includes(q))
-        );
-      }
-      tbody.innerHTML = generateReceiptRows(list);
-      if (countLabel) countLabel.textContent = `Hiển thị ${list.length} bản ghi`;
+    currentPageByTab.receipts = 1;
+    let list = receipts;
+    if (receiptSearchQuery) {
+      const q = receiptSearchQuery.toLowerCase().trim();
+      list = list.filter(r =>
+        (r.id && r.id.toLowerCase().includes(q)) ||
+        (r.date && r.date.toLowerCase().includes(q))
+      );
     }
+    refreshAdminTable('receipts', list, 'receiptTableBody', generateReceiptRows, 'phiếu nhập');
   };
 
   window.handleOrderSearch = (val) => {
     orderSearchQuery = val;
-    const tbody = document.getElementById('orderTableBody');
-    const countLabel = document.getElementById('orderCountLabel');
-    if (tbody) {
-      let list = orders;
-      if (orderStatusFilter) {
-        list = list.filter(o => o.status === orderStatusFilter);
-      }
-      if (orderSearchQuery) {
-        const q = orderSearchQuery.toLowerCase().trim();
-        list = list.filter(o =>
-          (String(o.id).toLowerCase().includes(q)) ||
-          (o.customer && o.customer.toLowerCase().includes(q)) ||
-          (o.phone && o.phone.replace(/\s+/g, '').includes(q.replace(/\s+/g, '')))
-        );
-      }
-      tbody.innerHTML = generateOrderRows(list);
-      if (countLabel) countLabel.textContent = `Hiển thị ${list.length} bản ghi`;
+    currentPageByTab.orders = 1;
+    let list = orders;
+    if (orderStatusFilter) {
+      list = list.filter(o => o.status === orderStatusFilter);
     }
+    if (orderSearchQuery) {
+      const q = orderSearchQuery.toLowerCase().trim();
+      list = list.filter(o =>
+        (String(o.id).toLowerCase().includes(q)) ||
+        (o.customer && o.customer.toLowerCase().includes(q)) ||
+        (o.phone && o.phone.replace(/\s+/g, '').includes(q.replace(/\s+/g, '')))
+      );
+    }
+    refreshAdminTable('orders', list, 'orderTableBody', generateOrderRows, 'đơn hàng');
   };
 
   // --------------------------------------------------------------------------
@@ -2786,6 +2831,7 @@ function initAdminPortal(options = {}) {
   // --------------------------------------------------------------------------
   window.handleFilterOrderStatus = (st) => {
     orderStatusFilter = st;
+    currentPageByTab.orders = 1;
     render();
   };
 
@@ -2966,6 +3012,7 @@ function initAdminPortal(options = {}) {
 
   window.toggleStockLowOnly = (checked) => {
     stockOnlyLow = checked;
+    currentPageByTab.stock = 1;
     render();
   };
 
