@@ -1,0 +1,410 @@
+/* ==========================================================================
+   Product Detail Page Styles
+   TechnoStore - Pure CSS
+   ========================================================================== */
+
+.detail-container {
+  padding-top: 32px;
+  padding-bottom: 64px;
+}
+
+/* Breadcrumbs */
+.breadcrumb-trail {
+  margin-bottom: 24px;
+  font-size: 14px;
+  color: var(--color-ink-3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.breadcrumb-link {
+  color: var(--color-ink-3);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.breadcrumb-link:hover {
+  color: var(--color-ink);
+}
+
+.breadcrumb-current {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+/* Main Detail Grid */
+.detail-main-grid {
+  display: grid;
+  gap: 40px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .detail-main-grid {
+    grid-template-columns: 1.1fr 1fr;
+  }
+}
+
+/* Gallery */
+.gallery-main-view {
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-3xl);
+  background-color: var(--color-surface);
+  padding: 56px 0;
+}
+
+.gallery-main-art {
+  height: 420px;
+}
+
+.gallery-thumbs-row {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.gallery-thumb-item {
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  padding: 12px 0;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color var(--transition-fast);
+}
+
+.gallery-thumb-item.active {
+  border-color: var(--color-brand-500);
+}
+
+.gallery-thumb-art {
+  height: 80px;
+}
+
+/* Product Info */
+.detail-info-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-heading {
+  margin-top: 16px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+
+@media (min-width: 640px) {
+  .detail-heading {
+    font-size: 36px;
+  }
+}
+
+.detail-meta-text {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--color-ink-3);
+}
+
+.detail-price-box {
+  margin-top: 24px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.detail-current-price {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--color-brand-600);
+}
+
+.detail-old-price {
+  font-size: 18px;
+  color: var(--color-ink-3);
+  text-decoration: line-through;
+}
+
+.quick-specs-grid {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.quick-spec-card {
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  padding: 16px;
+}
+
+.quick-spec-key {
+  font-size: 12px;
+  color: var(--color-ink-3);
+}
+
+.quick-spec-val {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+/* Quantity Stepper */
+.qty-stepper-wrap {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.qty-control {
+  display: flex;
+  height: 48px;
+  align-items: center;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-line);
+  background-color: var(--color-white);
+}
+
+.qty-btn {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  color: var(--color-ink);
+  transition: color var(--transition-fast);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.qty-btn:hover {
+  color: var(--color-brand-600);
+}
+
+.qty-display {
+  width: 32px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.stock-note {
+  font-size: 12px;
+  color: var(--color-ink-3);
+}
+
+.detail-action-buttons {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.detail-action-buttons .btn {
+  flex: 1;
+}
+
+.detail-perks-list {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-perk-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--color-ink-2);
+}
+
+/* Product Tabs Section */
+.product-tabs-bar {
+  margin-top: 56px;
+  border-bottom: 1px solid var(--color-line);
+  display: flex;
+  gap: 24px;
+}
+
+.tab-nav-btn {
+  padding-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  color: var(--color-ink-3);
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  transition: all var(--transition-fast);
+}
+
+.tab-nav-btn.active {
+  border-bottom-color: var(--color-brand-500);
+  color: var(--color-ink);
+}
+
+.specs-table-wrapper {
+  margin-top: 8px;
+  max-width: 768px;
+}
+
+.spec-data-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  padding: 14px 16px;
+  font-size: 14px;
+}
+
+.spec-data-row.alt-row {
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+.spec-row-key {
+  color: var(--color-ink-3);
+}
+
+.spec-row-val {
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.product-desc-content {
+  margin-top: 20px;
+  max-width: 768px;
+  line-height: 1.7;
+  color: var(--color-ink-2);
+}
+
+/* Related Products */
+.related-section {
+  margin-top: 64px;
+}
+
+.related-title {
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+/* Lưới sản phẩm tương tự: auto-fill, tự wrap và cuộn dọc */
+.related-products-grid,
+#relatedProductsGrid,
+.related-section .products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* ==========================================================================
+   Variant Selection Chips & Swatches (Thế Giới Di Động / Shopee Style)
+   ========================================================================== */
+.variant-selector-section {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 0;
+  border-top: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.variant-group-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.variant-group-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.variant-group-title .selected-val {
+  color: var(--color-brand-600);
+  font-weight: 700;
+}
+
+.variant-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.variant-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--color-line);
+  background-color: var(--color-white);
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.variant-chip-btn:hover {
+  border-color: var(--color-brand-400);
+  background-color: var(--color-surface);
+}
+
+.variant-chip-btn.active {
+  border-color: var(--color-brand-600);
+  background-color: var(--color-brand-50);
+  color: var(--color-brand-700);
+  font-weight: 700;
+  box-shadow: 0 0 0 1px var(--color-brand-600);
+}
+
+.variant-chip-btn.disabled,
+.variant-chip-btn:disabled,
+.variant-chip-btn.out-of-stock {
+  opacity: 0.45;
+  background-color: #f1f5f9;
+  border: 1.5px dashed #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Nút biến thể bị xám: chỉ thay đổi CSS, TUYỆT ĐỐI không ghi thêm chữ "(Hết)" */
+.variant-chip-btn.disabled::after,
+.variant-chip-btn.out-of-stock::after {
+  content: none;
+}
+
+.variant-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.auth-modal-card {
+  max-width: 440px;
+  text-align: center;
+  padding: 32px 24px;
+}

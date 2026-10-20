@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lịch sử đơn hàng - TechnoStore</title>
+  <meta name="description" content="Tra cứu tình trạng và lịch sử mua sắm đơn hàng của bạn tại TechnoStore.">
+
+  <!-- CSS Stylesheets (Đã gộp base.css & components.css) -->
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/page/auth.css">
+</head>
+
+<body>
+
+  <!-- Header -->
+  <div id="headerContainer"></div>
+
+  <!-- History Container -->
+  <main class="container profile-container">
+    <div
+      style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 24px;">
+      <div>
+        <h1 style="font-size: 28px; font-weight: 700; color: var(--color-ink);">Lịch sử đơn hàng</h1>
+        <p style="font-size: 14px; color: var(--color-ink-3); margin-top: 4px;">Xem lại và theo dõi tiến độ các đơn hàng
+          của bạn</p>
+      </div>
+      <a href="profile.html" class="btn btn-secondary btn-sm">Xem hồ sơ cá nhân</a>
+    </div>
+
+    <!-- Status Filter Pills -->
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;" id="orderFilterPills">
+      <button class="cat-pill-btn active" onclick="filterOrderHistory('')">Tất cả</button>
+      <button class="cat-pill-btn" onclick="filterOrderHistory('Mới đặt')">Mới đặt</button>
+      <button class="cat-pill-btn" onclick="filterOrderHistory('Đang giao')">Đang giao</button>
+      <button class="cat-pill-btn" onclick="filterOrderHistory('Đã giao')">Đã giao</button>
+      <button class="cat-pill-btn" onclick="filterOrderHistory('Đã huỷ')">Đã huỷ</button>
+    </div>
+
+    <!-- Orders List Wrap -->
+    <div id="orderHistoryList" class="orders-list-wrap"></div>
+  </main>
+
+  <!-- Footer -->
+  <div id="footerContainer"></div>
+
+  <!-- Floating Nav -->
+  <div id="floatingNavContainer"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="../../js/data.js"></script>
+  <script src="../../js/components.js"></script>
+  <script src="../../js/display.js"></script>
+
+  <script>
+    let activeStatusFilter = '';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderStoreHeader('headerContainer', {
+        basePath: '../../',
+        viewPath: '../',
+        activePage: 'orders'
+      });
+
+      renderStoreFooter('footerContainer', {
+        basePath: '../../',
+        viewPath: '../'
+      });
+
+      renderFloatingNav('floatingNavContainer', {
+        basePath: '../../',
+        viewPath: '../',
+        active: 'store'
+      });
+
+      renderOrderHistory();
+    });
+
+    function renderOrderHistory() {
+      if (typeof renderCustomerOrderHistory === 'function') {
+        renderCustomerOrderHistory('orderHistoryList', activeStatusFilter);
+      }
+    }
+
+    function filterOrderHistory(status) {
+      activeStatusFilter = status;
+      document.querySelectorAll('#orderFilterPills .cat-pill-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.trim() === (status || 'Tất cả'));
+      });
+      renderOrderHistory();
+    }
+  </script>
+</body>
+
+</html>

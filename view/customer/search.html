@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tìm kiếm sản phẩm - TechnoStore</title>
+  <meta name="description"
+    content="Tìm kiếm điện thoại, phụ kiện, máy tính bảng chính hãng với bộ lọc thông minh tại TechnoStore.">
+
+  <!-- CSS Stylesheets (Đã gộp base.css & components.css) -->
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/page/home.css">
+  <link rel="stylesheet" href="../../css/page/search.css">
+</head>
+
+<body>
+
+  <!-- Header -->
+  <div id="headerContainer"></div>
+
+  <!-- Search Main Container -->
+  <main class="container search-page-container">
+    <!-- Search Hero Box -->
+    <div class="search-hero-box">
+      <h1 class="search-hero-title">Tìm kiếm thiết bị công nghệ</h1>
+      <p class="search-hero-desc">Hơn 500+ sản phẩm chính hãng với bảo hành 12 tháng</p>
+
+      <div class="search-large-bar-wrap">
+        <img src="../../assets/icon/tim-kiem.svg" class="search-large-icon icon icon-20" alt="" />
+        <input type="text" id="searchLargeInput" class="search-large-input"
+          placeholder="Nhập tên sản phẩm, hãng, thông số..." oninput="handleMainSearchInput(this.value)" />
+      </div>
+
+      <div class="search-tags-row">
+        <span>Gợi ý:</span>
+        <button class="search-tag-chip" onclick="applyTagSearch('iPhone 16')">iPhone 16</button>
+        <button class="search-tag-chip" onclick="applyTagSearch('Galaxy S25')">Galaxy S25</button>
+        <button class="search-tag-chip" onclick="applyTagSearch('iPad Pro')">iPad Pro</button>
+        <button class="search-tag-chip" onclick="applyTagSearch('AirPods')">AirPods</button>
+      </div>
+    </div>
+
+    <!-- Results Top Bar -->
+    <div class="search-results-header">
+      <div>
+        <h2 class="search-count-title" id="productCountDisplay">Kết quả tìm kiếm</h2>
+      </div>
+
+      <div class="section-controls">
+        <div class="select-wrapper sort-select-wrap">
+          <select id="filterSortSelect" class="select-control" aria-label="Sắp xếp sản phẩm">
+            <option value="pop">Bán chạy nhất</option>
+            <option value="asc">Giá thấp → cao</option>
+            <option value="desc">Giá cao → thấp</option>
+          </select>
+          <span class="select-arrow">▼</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Store Layout with Filters -->
+    <div class="store-layout">
+      <!-- Filter Sidebar -->
+      <aside class="filter-sidebar">
+        <div class="filter-sidebar-header">
+          <h3 class="filter-sidebar-title">Bộ lọc nâng cao</h3>
+          <button onclick="filterCtrl.reset()" class="reset-filter-link">Xoá lọc</button>
+        </div>
+
+        <div class="form-field" style="margin:0;">
+          <label class="form-label">Tên sản phẩm</label>
+          <input type="text" id="filterKeywordInput" placeholder="Nhập từ khoá..." class="input-control" />
+        </div>
+
+        <div class="form-field" style="margin:0;">
+          <label class="form-label">Danh mục</label>
+          <div class="select-wrapper">
+            <select id="filterCategorySelect" class="select-control">
+              <option value="Tất cả">Tất cả</option>
+              <option value="Điện thoại">Điện thoại</option>
+              <option value="Máy tính bảng">Máy tính bảng</option>
+              <option value="Tai nghe">Tai nghe</option>
+              <option value="Đồng hồ thông minh">Đồng hồ thông minh</option>
+              <option value="Phụ kiện">Phụ kiện</option>
+            </select>
+            <span class="select-arrow">▼</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="form-label">Hãng sản xuất</div>
+          <!-- Danh sách hãng được tạo động từ dữ liệu sản phẩm trong bộ lọc. -->
+          <div class="brand-checkbox-list" id="brandCheckboxList"></div>
+        </div>
+
+        <div>
+          <div class="form-label">Khoảng giá</div>
+          <div class="price-inputs-grid">
+            <input type="number" id="filterPriceMin" class="input-control" value="0" step="1000000" placeholder="Từ" />
+            <!-- Đồng bộ giới hạn mặc định với giá trị bộ lọc và thao tác Xoá lọc. -->
+            <input type="number" id="filterPriceMax" class="input-control" value="50000000" step="1000000"
+              placeholder="Đến" />
+          </div>
+          <input type="range" id="filterPriceRange" min="0" max="50000000" step="1000000" value="50000000"
+            style="margin-top: 12px;" />
+          <div class="price-range-label" id="priceRangeLabel">0 ₫ – 50.000.000 ₫</div>
+        </div>
+      </aside>
+
+      <!-- Products Grid & Pagination -->
+      <div>
+        <div id="productsGrid" class="products-grid"></div>
+        <div id="paginationContainer" class="pagination-wrapper"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <div id="footerContainer"></div>
+
+  <!-- Floating Nav -->
+  <div id="floatingNavContainer"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="../../js/data.js"></script>
+  <script src="../../js/components.js"></script>
+  <script src="../../js/display.js"></script>
+  <script src="../../js/search.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlQ = new URLSearchParams(window.location.search).get('q') || '';
+
+      renderStoreHeader('headerContainer', {
+        basePath: '../../',
+        viewPath: '../',
+        query: urlQ
+      });
+
+      renderStoreFooter('footerContainer', {
+        basePath: '../../',
+        viewPath: '../'
+      });
+
+      renderFloatingNav('floatingNavContainer', {
+        basePath: '../../',
+        viewPath: '../',
+        active: 'store'
+      });
+
+      window.filterCtrl = new FilterController({
+        detailUrlPrefix: 'detail.html?id='
+      });
+      window.filterCtrl.init();
+
+      if (urlQ) {
+        const inp = document.getElementById('searchLargeInput');
+        if (inp) inp.value = urlQ;
+      }
+    });
+
+    function handleMainSearchInput(val) {
+      if (window.filterCtrl) {
+        window.filterCtrl.keyword = val.trim();
+        window.filterCtrl.page = 1;
+        // Dùng chung điểm áp dụng bộ lọc với thanh Header và bộ lọc bên trái.
+        window.filterCtrl.applyFilters();
+
+        const kwInp = document.getElementById('filterKeywordInput');
+        if (kwInp) kwInp.value = val;
+        const headerInp = document.getElementById('headerSearchInput');
+        if (headerInp) headerInp.value = val;
+      }
+    }
+
+    function applyTagSearch(tag) {
+      const inp = document.getElementById('searchLargeInput');
+      if (inp) inp.value = tag;
+      handleMainSearchInput(tag);
+    }
+  </script>
+</body>
+
+</html>

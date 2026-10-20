@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
+  <!-- Khung nền màu xanh bo tròn góc chuẩn Figma -->
+  <rect width="32" height="32" rx="10" fill="#1A6DFF"/>
+  
+  <!-- Hình điện thoại nét màu trắng ở giữa -->
+  <rect x="10" y="6" width="12" height="20" rx="3" stroke="#FFFFFF" stroke-width="1.8"/>
+  <path d="M15 22h2" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

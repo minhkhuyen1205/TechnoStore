@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chi tiết sản phẩm - TechnoStore</title>
+  <meta name="description"
+    content="Xem thông số kỹ thuật, giá bán và đánh giá chi tiết sản phẩm chính hãng tại TechnoStore.">
+
+  <!-- CSS Stylesheets (Đã gộp base.css & components.css) -->
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/page/detail.css">
+</head>
+
+<body>
+
+  <!-- Header -->
+  <div id="headerContainer"></div>
+
+  <!-- Detail Main View -->
+  <main class="container detail-container" id="productDetailContainer">
+    <!-- Breadcrumbs -->
+    <div class="breadcrumb-trail" id="detailBreadcrumbs">
+      <a href="../../index.html" class="breadcrumb-link">Trang chủ</a> /
+      <span id="crumbCat" class="breadcrumb-link">Danh mục</span> /
+      <span id="crumbName" class="breadcrumb-current">Tên sản phẩm</span>
+    </div>
+
+    <!-- Main 2-Col Grid -->
+    <div class="detail-main-grid">
+      <!-- Left Col: Gallery -->
+      <div>
+        <div class="gallery-main-view" id="galleryMainArt"></div>
+        <div class="gallery-thumbs-row" id="galleryThumbs"></div>
+      </div>
+
+      <!-- Right Col: Product Info & Variant Selection -->
+      <div class="detail-info-col">
+        <div id="stockBadgeContainer"></div>
+        <h1 class="detail-heading" id="productTitle">Tên sản phẩm</h1>
+        <div class="detail-meta-text" id="productMeta">Thương hiệu: Apple</div>
+
+        <div class="detail-price-box">
+          <span class="detail-current-price" id="currentPrice">0 ₫</span>
+          <span class="detail-old-price" id="oldPrice"></span>
+        </div>
+
+        <!-- Quick Specs Grid -->
+        <div class="quick-specs-grid" id="quickSpecsGrid">
+          <div class="quick-spec-card">
+            <div class="quick-spec-key">Chip</div>
+            <div class="quick-spec-val" id="specChip">-</div>
+          </div>
+          <div class="quick-spec-card">
+            <div class="quick-spec-key">RAM</div>
+            <div class="quick-spec-val" id="specRam">-</div>
+          </div>
+          <div class="quick-spec-card">
+            <div class="quick-spec-key">ROM</div>
+            <div class="quick-spec-val" id="specRom">-</div>
+          </div>
+        </div>
+
+        <!-- KHU VỰC CHỌN PHIÊN BẢN (CHIPS / SWATCHES) CHUẨN THẾ GIỚI DI ĐỘNG -->
+        <div id="variantSelectorContainer" class="variant-selector-section">
+          <!-- Dynamic Variant Chips rendered by js/detail.js -->
+        </div>
+
+        <!-- Quantity Stepper -->
+        <div class="qty-stepper-wrap">
+          <div class="qty-control">
+            <button type="button" class="qty-btn" onclick="changeDetailQty(-1)" aria-label="Giảm">-</button>
+            <span class="qty-display" id="detailQtyVal">1</span>
+            <button type="button" class="qty-btn" onclick="changeDetailQty(1)" aria-label="Tăng">+</button>
+          </div>
+          <div class="stock-note" id="maxStockNote">Đang kiểm tra tồn kho...</div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="detail-action-buttons">
+          <button type="button" id="addToCartBtn" onclick="handleDetailAddToCart()" class="btn btn-secondary btn-lg">
+            Thêm vào giỏ
+          </button>
+          <button type="button" id="buyNowBtn" onclick="handleDetailBuyNow()" class="btn btn-primary btn-lg">
+            Mua ngay
+          </button>
+        </div>
+
+        <!-- Perks List -->
+        <ul class="detail-perks-list">
+          <li class="detail-perk-row">
+            <span style="color: #059669; font-weight: 700;">✓</span>
+            Bảo hành chính hãng 12 tháng tại đại lý ủy quyền
+          </li>
+          <li class="detail-perk-row">
+            <span style="color: #059669; font-weight: 700;">✓</span>
+            Miễn phí giao hàng toàn quốc cho đơn từ 2.000.000 ₫
+          </li>
+          <li class="detail-perk-row">
+            <span style="color: #059669; font-weight: 700;">✓</span>
+            Đổi mới trong 30 ngày nếu có lỗi từ nhà sản xuất
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Product Tabs: Specs & Description -->
+    <div class="product-tabs-bar">
+      <button class="tab-nav-btn active" id="tabSpecBtn" onclick="switchDetailTab('spec')">
+        Thông số kỹ thuật
+      </button>
+      <button class="tab-nav-btn" id="tabDescBtn" onclick="switchDetailTab('desc')">
+        Mô tả chi tiết
+      </button>
+    </div>
+
+    <div id="tabContentArea">
+      <!-- Specs Table -->
+      <div id="tabSpecContent" class="specs-table-wrapper">
+        <div id="specsRowsContainer"></div>
+      </div>
+
+      <!-- Description -->
+      <div id="tabDescContent" class="product-desc-content" style="display: none;">
+        <p id="descText"></p>
+      </div>
+    </div>
+
+    <!-- Related Products -->
+    <section class="related-section">
+      <h2 class="related-title">Sản phẩm tương tự</h2>
+      <div id="relatedProductsGrid" class="products-grid"></div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <div id="footerContainer"></div>
+
+  <!-- Floating Nav: Ẩn trên trang chi tiết sản phẩm (không hiển thị nút chuyển đổi role) -->
+
+  <!-- JavaScript Modules -->
+  <script src="../../js/data.js"></script>
+  <script src="../../js/components.js"></script>
+  <script src="../../js/display.js"></script>
+  <script src="../../js/detail.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderStoreHeader('headerContainer', {
+        basePath: '../../',
+        viewPath: '../'
+      });
+
+      renderStoreFooter('footerContainer', {
+        basePath: '../../',
+        viewPath: '../'
+      });
+
+      // Khởi tạo trang chi tiết từ controller js/detail.js
+      initDetailPage();
+    });
+  </script>
+</body>
+
+</html>

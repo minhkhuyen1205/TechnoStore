@@ -1,0 +1,19 @@
+/* ==========================================================================
+   TECHNOSTORE - THÔNG BÁO HỢP NHẤT FILE CSS (MERGED NOTICE)
+   ==========================================================================
+   * File `base.css` đã được hợp nhất hoàn toàn vào file `components.css`!
+   *
+   * Toàn bộ:
+   * 1. Hệ thống biến màu sắc CSS (:root)
+   * 2. CSS Reset & Typography
+   * 3. Khung chứa Containers & Keyframes
+   * 4. Toàn bộ UI Components (Buttons, Forms, Badges, Modals, Cards, Tables...)
+   *
+   * Đều đã được chuyển về một file duy nhất có chú thích tiếng Việt chi tiết tại:
+   * ==> `css/components.css`
+   *
+   * Lệnh @import bên dưới giúp đảm bảo tương thích ngược 100% nếu có bất kỳ
+   * trang HTML nào vẫn còn liên kết đến `base.css`.
+   ========================================================================== */
+
+@import url('./components.css');

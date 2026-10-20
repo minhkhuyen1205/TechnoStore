@@ -1,0 +1,325 @@
+/* ==========================================================================
+   Home Page Styles
+   TechnoStore - Pure CSS
+   ========================================================================== */
+
+/* Hero Banner */
+.hero-section {
+  padding-top: 24px;
+}
+
+.hero-banner {
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+  border-radius: var(--radius-3xl);
+  background-color: var(--color-surface);
+}
+
+@media (min-width: 1024px) {
+  .hero-banner {
+    grid-template-columns: 1.1fr 1fr;
+  }
+}
+
+.hero-text-col {
+  padding: 32px;
+}
+
+@media (min-width: 640px) {
+  .hero-text-col {
+    padding: 56px;
+  }
+}
+
+.hero-heading {
+  margin-top: 20px;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+
+@media (min-width: 640px) {
+  .hero-heading {
+    font-size: 60px;
+  }
+}
+
+.hero-desc {
+  margin-top: 20px;
+  max-width: 440px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-ink-2);
+}
+
+.hero-actions {
+  margin-top: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hero-price-tag {
+  margin-top: 32px;
+  font-size: 14px;
+  color: var(--color-ink-3);
+}
+
+.hero-price-tag b {
+  font-size: 18px;
+  color: var(--color-ink);
+}
+
+.hero-art-col {
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--color-brand-50), var(--color-white));
+  padding: 40px;
+}
+
+.hero-glow-circle {
+  position: absolute;
+  width: 288px;
+  height: 288px;
+  border-radius: var(--radius-full);
+  background-color: rgba(217, 232, 255, 0.7);
+  filter: blur(48px);
+}
+
+.hero-device-art {
+  position: relative;
+  height: 320px;
+  filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.15));
+}
+
+@media (min-width: 640px) {
+  .hero-device-art {
+    height: 384px;
+  }
+}
+
+/* Feature Perks */
+.perks-grid {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .perks-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.perk-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-line);
+  padding: 16px;
+  background-color: var(--color-white);
+}
+
+.perk-icon-wrap {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-brand-50);
+  color: var(--color-brand-600);
+  flex-shrink: 0;
+}
+
+.perk-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.perk-desc {
+  font-size: 12px;
+  color: var(--color-ink-3);
+}
+
+/* Store Main Product Section */
+.product-section {
+  margin-top: 64px;
+  scroll-margin-top: 80px;
+}
+
+.section-top-bar {
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.section-title {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+
+.section-subtitle {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--color-ink-3);
+}
+
+.section-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-select-wrap {
+  width: 208px;
+}
+
+/* Category Quick Pills */
+.category-pills-row {
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cat-pill-btn {
+  height: 36px;
+  border-radius: var(--radius-full);
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  background-color: var(--color-surface);
+  color: var(--color-ink-2);
+}
+
+.cat-pill-btn:hover {
+  background-color: var(--color-line);
+}
+
+.cat-pill-btn.active {
+  background-color: var(--color-ink);
+  color: var(--color-white);
+}
+
+/* Store Two-Column Layout */
+.store-layout {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .store-layout {
+    grid-template-columns: 260px 1fr;
+  }
+}
+
+/* Sidebar Filter */
+.filter-sidebar {
+  border-radius: var(--radius-3xl);
+  border: 1px solid var(--color-line);
+  background-color: var(--color-white);
+  padding: 20px;
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: fit-content;
+}
+
+@media (min-width: 1024px) {
+  .filter-sidebar {
+    position: sticky;
+    top: 96px;
+  }
+}
+
+.filter-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filter-sidebar-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.reset-filter-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-brand-600);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.reset-filter-link:hover {
+  text-decoration: underline;
+}
+
+.brand-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.price-inputs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.price-range-label {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-ink-3);
+}
+
+/* Products Grid */
+.products-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.empty-state-box {
+  border-radius: var(--radius-3xl);
+  border: 1px dashed var(--color-line);
+  padding: 96px 20px;
+  text-align: center;
+  color: var(--color-ink-3);
+  font-size: 14px;
+}
+
+.pagination-wrapper {
+  margin-top: 40px;
+}

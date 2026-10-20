@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập & Đăng ký - TechnoStore</title>
+  <meta name="description" content="Đăng nhập hoặc tạo tài khoản thành viên TechnoStore để nhận ưu đãi mua sắm.">
+
+  <!-- CSS Stylesheets (Đã gộp base.css & components.css) -->
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/page/auth.css">
+</head>
+
+<body>
+
+  <!-- Header -->
+  <div id="headerContainer"></div>
+
+  <!-- Auth Content Container -->
+  <main id="authPageContent"></main>
+
+  <!-- Footer -->
+  <div id="footerContainer"></div>
+
+  <!-- Floating Nav -->
+  <div id="floatingNavContainer"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="../../js/data.js"></script>
+  <script src="../../js/components.js"></script>
+  <script src="../../js/display.js"></script>
+  <script src="../../js/auth.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderStoreHeader('headerContainer', {
+        basePath: '../../',
+        viewPath: '../',
+        activePage: 'login'
+      });
+
+      renderStoreFooter('footerContainer', {
+        basePath: '../../',
+        viewPath: '../'
+      });
+
+      renderFloatingNav('floatingNavContainer', {
+        basePath: '../../',
+        viewPath: '../',
+        active: 'store'
+      });
+
+      initAuthPage({
+        basePath: '../../',
+        defaultMode: 'login'
+      });
+    });
+  </script>
+</body>
+
+</html>

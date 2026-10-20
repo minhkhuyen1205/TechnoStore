@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thanh toán đơn hàng - TechnoStore</title>
+  <meta name="description" content="Xác nhận địa chỉ nhận hàng và phương thức thanh toán an toàn tại TechnoStore.">
+
+  <!-- CSS Stylesheets (Đã gộp base.css & components.css) -->
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/page/cart.css">
+</head>
+
+<body>
+
+  <!-- Header -->
+  <div id="headerContainer"></div>
+
+  <!-- Checkout Content -->
+  <main id="checkoutPageContent"></main>
+
+  <!-- Footer -->
+  <div id="footerContainer"></div>
+
+  <!-- Floating Nav -->
+  <div id="floatingNavContainer"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="../../js/data.js"></script>
+  <script src="../../js/components.js"></script>
+  <script src="../../js/display.js"></script>
+  <script src="../../js/cart.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderStoreHeader('headerContainer', {
+        basePath: '../../',
+        viewPath: '../',
+        activePage: 'checkout'
+      });
+
+      renderStoreFooter('footerContainer', {
+        basePath: '../../',
+        viewPath: '../'
+      });
+
+      renderFloatingNav('floatingNavContainer', {
+        basePath: '../../',
+        viewPath: '../',
+        active: 'store'
+      });
+
+      initCheckoutPage({
+        basePath: '../../'
+      });
+    });
+  </script>
+</body>
+
+</html>

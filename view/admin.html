@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechnoAdmin - Cổng quản trị cửa hàng</title>
+  <meta name="description" content="Trang quản trị bán hàng, đơn hàng, khách hàng và kho bãi TechnoStore.">
+
+  <!-- CSS Stylesheets (Đã gộp base.css & components.css) -->
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+
+<body>
+
+  <!-- Admin Root Application Container -->
+  <div id="adminApp"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="../js/data.js"></script>
+  <script src="../js/components.js"></script>
+  <script src="../js/display.js"></script>
+  <script src="../js/admin.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initAdminPortal({
+        basePath: '../'
+      });
+    });
+  </script>
+</body>
+
+</html>
