@@ -242,13 +242,6 @@
         isRoot: true
       });
 
-      // renderFloatingNav('floatingNavContainer', {
-      //   basePath: './',
-      //   viewPath: 'view/',
-      //   isRoot: true,
-      //   active: 'store'
-      // });
-
       // 2. Render Hero Graphic & Giá bắt đầu (Ưu tiên sản phẩm còn hàng)
       const hero = getProducts().find(p => !p.isDeleted && (Number(p.stock) || 0) > 0) || getProducts()[0];
       const heroArt = document.getElementById('heroArtWrapper');
