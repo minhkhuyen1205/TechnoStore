@@ -10,7 +10,6 @@ class FilterController {
     this.options = options;
     this.allProducts = getProducts().filter(p => !p.isDeleted);
 
-    // State
     this.category = options.category || 'Tất cả';
     this.brands = options.brands || [];
     this.minPrice = options.minPrice || 0;
