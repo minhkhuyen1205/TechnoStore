@@ -1564,6 +1564,38 @@ function saveCustomers(data) {
   setStorage('techno_customers', data);
 }
 
+/**
+ * Đồng bộ số đơn chưa bị hủy cho từng khách hàng từ danh sách đơn hàng thực tế.
+ * @param {Array} orderList - Danh sách đơn hàng cần dùng để tính số lượng.
+ */
+function syncCustomerOrderCounts(orderList = getOrders()) {
+  const customers = getCustomers();
+  const countableOrders = orderList.filter(order => order.status !== 'Đã huỷ' && order.status !== 'Đã hủy');
+  let hasChanges = false;
+
+  customers.forEach(customer => {
+    const customerEmail = (customer.email || '').trim().toLowerCase();
+    const customerPhone = (customer.phone || '').replace(/\D/g, '');
+    const orderCount = countableOrders.filter(order => {
+      const orderEmail = (order.customerEmail || '').trim().toLowerCase();
+      const orderPhone = (order.phone || '').replace(/\D/g, '');
+      return Boolean(
+        (customer.id && order.customerId && String(customer.id) === String(order.customerId)) ||
+        (customerEmail && orderEmail && customerEmail === orderEmail) ||
+        (customerPhone && orderPhone && customerPhone === orderPhone)
+      );
+    }).length;
+
+    if (Number(customer.orders) !== orderCount) {
+      customer.orders = orderCount;
+      hasChanges = true;
+    }
+  });
+
+  if (hasChanges) saveCustomers(customers);
+  return customers;
+}
+
 function getReceipts() {
   return getStorage('techno_receipts', defaultReceipts);
 }

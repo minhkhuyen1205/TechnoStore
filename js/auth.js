@@ -154,6 +154,19 @@ function initAuthPage(options = {}) {
         return;
       }
 
+      // Kiểm tra tài khoản quản trị trước khi đối chiếu thông tin khách hàng.
+      const normalizedIdentifier = identifier.toLowerCase();
+      const isAdminIdentifier = normalizedIdentifier === 'admin' || normalizedIdentifier === 'admin@technostore.vn';
+      const isAdminPassword = password === 'admin123' || password === '123';
+      if (isAdminIdentifier && isAdminPassword) {
+        setAdminUser(true);
+        showCustomDialog('Đăng nhập Quản trị viên thành công!', 'Thành công', 'success');
+        setTimeout(() => {
+          window.location.href = `${basePath}view/admin.html`;
+        }, 1200);
+        return;
+      }
+
       const customers = typeof getCustomers === 'function' ? getCustomers() : [];
       const cleanId = identifier.replace(/\D/g, '');
       const user = customers.find(c => {

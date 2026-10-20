@@ -22,6 +22,11 @@ function initAdminPortal(options = {}) {
   let receipts = getReceipts();
   let categories = getCategories();
 
+  // Chuẩn hóa số đơn đã lưu của khách hàng theo dữ liệu đơn hàng hiện có.
+  if (typeof syncCustomerOrderCounts === 'function') {
+    customers = syncCustomerOrderCounts(orders);
+  }
+
   // Bảng tỷ lệ % lợi nhuận (margin) cho từng sản phẩm
   let margins = {};
   products.forEach(p => {
@@ -93,11 +98,11 @@ function initAdminPortal(options = {}) {
           <div style="margin-top: 28px; display: flex; flex-direction: column; gap: 16px;">
             <div class="form-field" style="margin:0;">
               <label class="form-label">Tên đăng nhập</label>
-              <input type="text" class="input-control" value="admin" required />
+              <input type="text" class="input-control" value="" required />
             </div>
             <div class="form-field" style="margin:0;">
               <label class="form-label">Mật khẩu</label>
-              <input type="password" class="input-control" value="admin123" required />
+              <input type="password" class="input-control" value="" required />
             </div>
             <button type="submit" class="btn btn-dark btn-lg btn-full" style="margin-top: 8px;">
               Đăng nhập
@@ -282,7 +287,23 @@ function initAdminPortal(options = {}) {
     if (!list || list.length === 0) {
       return `<tr><td colspan="7" class="text-center" style="padding: 24px; color: var(--color-ink-3);">Không tìm thấy khách hàng nào.</td></tr>`;
     }
-    return list.map(r => `
+    return list.map(r => {
+      // Đếm trực tiếp các đơn chưa bị hủy theo mã khách hàng, email hoặc số điện thoại.
+      const customerOrderCount = orders.filter(order => {
+        if (order.status === 'Đã huỷ' || order.status === 'Đã hủy') return false;
+
+        const customerEmail = (r.email || '').trim().toLowerCase();
+        const customerPhone = (r.phone || '').replace(/\D/g, '');
+        const orderEmail = (order.customerEmail || '').trim().toLowerCase();
+        const orderPhone = (order.phone || '').replace(/\D/g, '');
+        return Boolean(
+          (r.id && order.customerId && String(r.id) === String(order.customerId)) ||
+          (customerEmail && orderEmail && customerEmail === orderEmail) ||
+          (customerPhone && orderPhone && customerPhone === orderPhone)
+        );
+      }).length;
+
+      return `
       <tr style="${r.locked ? 'background-color: rgba(245, 246, 249, 0.6); opacity: 0.7;' : ''}">
         <td><span style="font-family: var(--font-mono); font-size: 12px;">${r.id}</span></td>
         <td>
@@ -291,7 +312,7 @@ function initAdminPortal(options = {}) {
         </td>
         <td>${r.phone}</td>
         <td>${r.joined}</td>
-        <td class="text-center">${r.orders}</td>
+        <td class="text-center">${customerOrderCount}</td>
         <td>
           <span class="badge ${r.locked ? 'badge-danger' : 'badge-success'}">
             ${r.locked ? 'Bị khoá' : 'Hoạt động'}
@@ -308,7 +329,8 @@ function initAdminPortal(options = {}) {
           </div>
         </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
   }
 
   function renderUsers() {
@@ -416,7 +438,7 @@ function initAdminPortal(options = {}) {
 
     const catObj = editingCategory
       ? categories.map((c, i) => typeof c === 'string' ? { id: `DM0${i + 1}`, name: c, type: i < 2 ? 'Thiết bị chính' : 'Phụ kiện & Đeo', status: 'active' } : c)
-          .find(c => c.name === editingCategory)
+        .find(c => c.name === editingCategory)
       : null;
 
     return `
@@ -624,7 +646,7 @@ function initAdminPortal(options = {}) {
               <th>Sản phẩm</th>
               <th>Danh mục</th>
               <th>Hãng</th>
-              <th class="text-right">Giá bán (Từ)</th>
+              <th class="text-right">Giá bán</th>
               <th class="text-center">Tổng tồn kho</th>
               <th>Danh sách SKU Biến thể</th>
               <th class="text-center">Thao tác</th>
@@ -1528,16 +1550,15 @@ function initAdminPortal(options = {}) {
             </td>
             <td class="text-right">
               <input
-                type="number"
+                type="text"
+                inputmode="numeric"
                 class="input-control sku-price-input"
-                value="${currentPrice}"
-                min="0"
-                step="10000"
+                value="${Number(currentPrice).toLocaleString('vi-VN')}"
                 ${priceInputAttrs}
               />
             </td>
             <td class="text-right">
-              <span class="sku-profit-text" style="color: ${profit >= 0 ? '#059669' : '#dc2626'}; font-weight: 600;">
+              <span class="sku-profit-text" style="font-weight: 700;">
                 ${(profit >= 0 ? '+' : '') + vnd(profit)}
               </span>
             </td>
@@ -1561,11 +1582,9 @@ function initAdminPortal(options = {}) {
               </div>
             </div>
           </td>
-          <td class="text-right font-mono">${vnd(minCost)}</td>
-          <td class="text-right font-mono" style="color: var(--color-brand-700); font-weight: 700;">Từ ${vnd(minPrice)}</td>
-          <td class="text-center">
-            <span class="badge ${variantCount > 0 ? 'badge-info' : 'badge-neutral'}">${variantCount} SKU</span>
-          </td>
+          <td class="text-center font-mono">Từ ${vnd(minCost)}</td>
+          <td class="text-center font-mono" style="color: var(--color-brand-700); font-weight: 700;">Từ ${vnd(minPrice)}</td>
+          <td class="text-center">${variantCount}</td>
           <td class="text-center" onclick="event.stopPropagation()">
             <div style="display: flex; justify-content: center; gap: 4px;">
               <button
@@ -1590,13 +1609,13 @@ function initAdminPortal(options = {}) {
                     <span style="font-weight: 700; font-size: 13px; color: var(--color-ink);">${p.name}:</span>
                     <span style="font-size: 12px; color: var(--color-ink-3); margin-left: 8px;">
                       ${isEditing
-            ? '★ Chế độ Chỉnh sửa — Nhập % Lợi nhuận riêng hoặc gõ trực tiếp Giá bán'
-            : '👁️ Chế độ Xem — Nhấn biểu tượng bút chì để chỉnh sửa'
+            ? 'Chế độ Chỉnh sửa '
+            : 'Chế độ Xem '
           }
                     </span>
                   </div>
                   <span class="badge ${isEditing ? 'badge-warning' : 'badge-neutral'}">
-                    ${isEditing ? '✏️ Đang chỉnh sửa' : variantCount + ' cấu hình'}
+                    ${isEditing ? 'Đang chỉnh sửa' : variantCount + ' cấu hình'}
                   </span>
                 </div>
                 <div class="table-responsive">
@@ -1607,7 +1626,7 @@ function initAdminPortal(options = {}) {
                         <th>Màu sắc</th>
                         <th>RAM/ROM</th>
                         <th class="text-right">Giá vốn</th>
-                        <th class="text-center" style="width: 130px;">% Lợi nhuận riêng</th>
+                        <th class="text-center" style="width: 130px;">% Lợi nhuận</th>
                         <th class="text-right" style="width: 180px;">Giá bán niêm yết (₫)</th>
                         <th class="text-right">Lãi chênh lệch</th>
                       </tr>
@@ -1623,7 +1642,7 @@ function initAdminPortal(options = {}) {
                       Huỷ chỉnh sửa
                     </button>
                     <button type="button" class="btn btn-primary btn-sm" onclick="handleSavePricingForProduct(${p.id})">
-                      💾 Lưu bảng giá sản phẩm này
+                      Lưu bảng giá 
                     </button>
                   </div>
                 ` : ''}
@@ -1635,18 +1654,14 @@ function initAdminPortal(options = {}) {
     }).join('');
 
     return `
-      <div class="alert-banner info">
-        Bảng giá theo từng SKU biến thể. Click vào dòng sản phẩm để xem chi tiết &mdash; nhấn biểu tượng <b>✏️</b> để bật chế độ chỉnh sửa giá và lưu.
-      </div>
-
       <div class="table-responsive">
         <table class="data-table">
           <thead>
             <tr>
               <th>Sản phẩm</th>
-              <th class="text-right">Giá vốn thấp nhất</th>
-              <th class="text-right">Giá bán cơ sở (Từ)</th>
-              <th class="text-center">Số lượng SKU</th>
+              <th class="text-center">Giá vốn</th>
+              <th class="text-center">Giá bán</th>
+              <th class="text-center">Số lượng Phiên bản</th>
               <th class="text-center">Thao tác</th>
             </tr>
           </thead>
@@ -1949,6 +1964,17 @@ function initAdminPortal(options = {}) {
 
   window.handleAdminLogin = (e) => {
     e.preventDefault();
+    const form = e.currentTarget;
+    const identifier = form.querySelector('input[type="text"]').value.trim().toLowerCase();
+    const password = form.querySelector('input[type="password"]').value;
+    const validIdentifier = identifier === 'admin' || identifier === 'admin@technostore.vn';
+    const validPassword = password === 'admin123' || password === '123';
+
+    if (!validIdentifier || !validPassword) {
+      showCustomDialog('Tên đăng nhập hoặc mật khẩu quản trị không chính xác!', 'Đăng nhập thất bại', 'error');
+      return;
+    }
+
     isLoggedIn = true;
     setAdminUser(true);
     render();
@@ -2649,20 +2675,25 @@ function initAdminPortal(options = {}) {
     const row = document.getElementById(`skuPricingRow_${sku}`);
     if (row) {
       const priceInput = row.querySelector('.sku-price-input');
-      if (priceInput) priceInput.value = newPrice;
+      if (priceInput) priceInput.value = newPrice.toLocaleString('vi-VN');
       const profitEl = row.querySelector('.sku-profit-text');
       if (profitEl) {
         const profit = newPrice - cost;
         profitEl.textContent = (profit >= 0 ? '+' : '') + vnd(profit);
-        profitEl.style.color = profit >= 0 ? '#059669' : '#dc2626';
       }
     }
   };
 
   window.handleSkuPriceInput = (sku, priceVal) => {
-    const p = Number(priceVal) || 0;
     const found = findVariantBySku(sku);
     if (!found) return;
+    const row = document.getElementById(`skuPricingRow_${sku}`);
+    const priceInput = row ? row.querySelector('.sku-price-input') : null;
+    const digitsBeforeCursor = priceInput
+      ? priceInput.value.slice(0, priceInput.selectionStart).replace(/\D/g, '').length
+      : 0;
+    const digits = String(priceVal).replace(/\D/g, '');
+    const p = Number(digits) || 0;
     const cost = Number(found.variant.cost) || 0;
     const newMargin = cost > 0 ? Math.round(((p - cost) / cost) * 100) : 0;
 
@@ -2671,17 +2702,25 @@ function initAdminPortal(options = {}) {
     }
     skuPricingDraft[sku].price = p;
     skuPricingDraft[sku].margin = newMargin;
-
     // Cập nhật DOM trực tiếp
-    const row = document.getElementById(`skuPricingRow_${sku}`);
     if (row) {
+      const priceField = row.querySelector('.sku-price-input');
+      if (priceField) {
+        priceField.value = digits ? p.toLocaleString('vi-VN') : '';
+        let caretPosition = 0;
+        let countedDigits = 0;
+        while (caretPosition < priceField.value.length && countedDigits < digitsBeforeCursor) {
+          if (/\d/.test(priceField.value[caretPosition])) countedDigits++;
+          caretPosition++;
+        }
+        priceField.setSelectionRange(caretPosition, caretPosition);
+      }
       const marginInput = row.querySelector('.sku-margin-input');
       if (marginInput) marginInput.value = newMargin;
       const profitEl = row.querySelector('.sku-profit-text');
       if (profitEl) {
         const profit = p - cost;
         profitEl.textContent = (profit >= 0 ? '+' : '') + vnd(profit);
-        profitEl.style.color = profit >= 0 ? '#059669' : '#dc2626';
       }
     }
   };
@@ -2780,6 +2819,10 @@ function initAdminPortal(options = {}) {
 
     targetOrder.status = newStatus;
     saveOrders(orders);
+    // Đồng bộ số đơn đã lưu của khách khi trạng thái đơn hàng thay đổi.
+    if (typeof syncCustomerOrderCounts === 'function') {
+      customers = syncCustomerOrderCounts(orders);
+    }
 
     if (selectedOrderModal && selectedOrderModal.id === id) {
       selectedOrderModal.status = newStatus;

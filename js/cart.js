@@ -773,6 +773,7 @@ function initCheckoutPage(options = {}) {
 
     const newOrder = {
       id: orderId,
+      customerId: customer.id || currentUser.id || '',
       customer: activeAddress.receiverName || customer.name,
       customerEmail: customer.email || '',
       phone: activeAddress.receiverPhone || customer.phone || '',
@@ -788,6 +789,10 @@ function initCheckoutPage(options = {}) {
     const orders = getOrders();
     orders.unshift(newOrder);
     saveOrders(orders);
+    // Cập nhật số đơn của khách hàng ngay sau khi lưu đơn checkout mới.
+    if (typeof syncCustomerOrderCounts === 'function') {
+      syncCustomerOrderCounts(orders);
+    }
 
     // 6. Xử lý sau khi đặt hàng thành công theo đúng luồng:
     if (isBuyNowMode) {

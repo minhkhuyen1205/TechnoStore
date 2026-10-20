@@ -977,17 +977,17 @@ input[type="range"] {
    Tương ứng dải thông tin Liên hệ, Chính sách ở cuối mọi trang
    ========================================================================== */
 .store-footer {
-  margin-top: 96px;
+  margin-top: 48px;
   border-top: 1px solid var(--color-line);
   background-color: var(--color-surface);
 }
 
 .footer-container {
   display: grid;
-  gap: 40px;
+  gap: 24px;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 56px 20px;
+  padding: 32px 20px;
 }
 
 @media (min-width: 768px) {
@@ -1043,7 +1043,7 @@ input[type="range"] {
 
 .footer-bottom-bar {
   border-top: 1px solid var(--color-line);
-  padding: 20px 0;
+  padding: 14px 0;
   text-align: center;
   font-size: 12px;
   color: var(--color-ink-3);

@@ -129,7 +129,7 @@ function renderProductGrid(containerId, productList, options = {}) {
   // Lọc bỏ sản phẩm đã bị xóa mềm (Soft Delete)
   let activeList = (productList || []).filter(p => !p.isDeleted);
 
-  // XỬ LÝ TRANG CHỦ: ẨN HOÀN TOÀN các sản phẩm có tổng tồn kho bằng 0
+  // Trang chủ chỉ ẩn sản phẩm hết hàng khi không hiển thị kết quả đã lọc.
   const isHomePage = options.isHome || (typeof window !== 'undefined' && (
     window.location.pathname.endsWith('index.html') ||
     window.location.pathname.endsWith('/') ||
@@ -142,7 +142,7 @@ function renderProductGrid(containerId, productList, options = {}) {
       !window.location.pathname.includes('profile.html'))
   ));
 
-  if (isHomePage) {
+  if (isHomePage && !options.includeOutOfStock) {
     activeList = activeList.filter(p => (Number(p.stock) || 0) > 0);
   }
 
@@ -393,43 +393,43 @@ function renderCustomerOrderHistory(containerId = 'orderHistoryList', activeStat
 function handleCustomerCancelOrder(orderId) {
   const order = getOrdersForCurrentUser().find(item => String(item.id) === String(orderId));
   if (!order || order.status !== 'Mới đặt') {
-      showCustomDialog('Chỉ có thể hủy đơn hàng đang ở trạng thái "Mới đặt".', 'Không thể hủy đơn', 'warning');
-      return;
+    showCustomDialog('Chỉ có thể hủy đơn hàng đang ở trạng thái "Mới đặt".', 'Không thể hủy đơn', 'warning');
+    return;
   }
 
   showCustomDialog(
-      `Bạn có chắc chắn muốn hủy đơn hàng #${order.id}? Số lượng sản phẩm sẽ được hoàn lại kho.`,
-      'Xác nhận hủy đơn',
-      'warning',
-      () => {
-        const allOrders = getOrders();
-        const target = allOrders.find(item => String(item.id) === String(orderId));
-        if (!target || target.status !== 'Mới đặt') {
-          showCustomDialog('Trạng thái đơn hàng đã thay đổi, vui lòng tải lại trang.', 'Không thể hủy đơn', 'error');
-          return;
-        }
+    `Bạn có chắc chắn muốn hủy đơn hàng #${order.id}? Số lượng sản phẩm sẽ được hoàn lại kho.`,
+    'Xác nhận hủy đơn',
+    'warning',
+    () => {
+      const allOrders = getOrders();
+      const target = allOrders.find(item => String(item.id) === String(orderId));
+      if (!target || target.status !== 'Mới đặt') {
+        showCustomDialog('Trạng thái đơn hàng đã thay đổi, vui lòng tải lại trang.', 'Không thể hủy đơn', 'error');
+        return;
+      }
 
-        // Kiểm tra SKU trước để không đổi trạng thái đơn nếu không thể hoàn kho đầy đủ.
-        const invalidItem = (target.items || []).find(item => !item.sku || !findVariantBySku(item.sku));
-        if (invalidItem) {
-          showCustomDialog(`Không thể hoàn kho cho sản phẩm có SKU "${invalidItem.sku || 'không xác định'}". Vui lòng liên hệ cửa hàng để được hỗ trợ.`, 'Không thể hủy đơn', 'error');
-          return;
-        }
+      // Kiểm tra SKU trước để không đổi trạng thái đơn nếu không thể hoàn kho đầy đủ.
+      const invalidItem = (target.items || []).find(item => !item.sku || !findVariantBySku(item.sku));
+      if (invalidItem) {
+        showCustomDialog(`Không thể hoàn kho cho sản phẩm có SKU "${invalidItem.sku || 'không xác định'}". Vui lòng liên hệ cửa hàng để được hỗ trợ.`, 'Không thể hủy đơn', 'error');
+        return;
+      }
 
-        (target.items || []).forEach(item => {
-          updateVariantStock(item.sku, Math.max(1, Math.floor(Number(item.qty) || 1)));
-        });
-        target.status = 'Đã huỷ';
-        saveOrders(allOrders);
-        showToast(`Đã hủy đơn #${target.id} và hoàn trả tồn kho.`);
+      (target.items || []).forEach(item => {
+        updateVariantStock(item.sku, Math.max(1, Math.floor(Number(item.qty) || 1)));
+      });
+      target.status = 'Đã huỷ';
+      saveOrders(allOrders);
+      showToast(`Đã hủy đơn #${target.id} và hoàn trả tồn kho.`);
 
-        if (typeof window.switchProfileTab === 'function') {
-          window.switchProfileTab('orders');
-        } else {
-          renderCustomerOrderHistory('orderHistoryList', window.activeStatusFilter || '');
-        }
-      },
-      { confirmText: 'Hủy đơn', cancelText: 'Giữ đơn hàng' }
+      if (typeof window.switchProfileTab === 'function') {
+        window.switchProfileTab('orders');
+      } else {
+        renderCustomerOrderHistory('orderHistoryList', window.activeStatusFilter || '');
+      }
+    },
+    { confirmText: 'Hủy đơn', cancelText: 'Giữ đơn hàng' }
   );
 }
 

@@ -282,8 +282,19 @@ class FilterController {
     this.applyFilters();
   }
 
+  hasActiveFilters() {
+    return Boolean(
+      this.keyword ||
+      this.category !== 'Tất cả' ||
+      this.brands.length > 0 ||
+      this.minPrice > 0 ||
+      this.maxPrice < 50000000
+    );
+  }
+
   filterList() {
     const kw = this.keyword.toLowerCase();
+    const hasActiveFilters = this.hasActiveFilters();
 
     let list = this.allProducts.filter(p => {
       const matchCat = this.category === 'Tất cả' || p.category === this.category;
@@ -297,8 +308,8 @@ class FilterController {
       return matchCat && matchBrand && matchPrice && matchName;
     });
 
-    // 1. TRANG CHỦ: ẨN HOÀN TOÀN các sản phẩm có tổng tồn kho bằng 0
-    if (this.isHome) {
+    // Trang chủ chỉ ẩn sản phẩm hết hàng khi chưa áp dụng bộ lọc tìm kiếm.
+    if (this.isHome && !hasActiveFilters) {
       list = list.filter(p => (Number(p.stock) || 0) > 0);
     }
 
@@ -314,7 +325,7 @@ class FilterController {
 
     // 3. TRANG DANH MỤC & TÌM KIẾM (search.html):
     // TỰ ĐỘNG ĐẨY SẢN PHẨM HẾT HÀNG XUỐNG DƯỚI CÙNG của danh sách kết quả
-    if (!this.isHome) {
+    if (!this.isHome || hasActiveFilters) {
       list.sort((a, b) => {
         const aInStock = (Number(a.stock) || 0) > 0 ? 1 : 0;
         const bInStock = (Number(b.stock) || 0) > 0 ? 1 : 0;
@@ -360,7 +371,8 @@ class FilterController {
     // Render lưới sản phẩm
     renderProductGrid('productsGrid', pageItems, {
       detailUrl: (p) => `${this.detailUrlPrefix}${p.id}`,
-      isHome: this.isHome
+      isHome: this.isHome,
+      includeOutOfStock: this.isHome && this.hasActiveFilters()
     });
 
     // Render phân trang
