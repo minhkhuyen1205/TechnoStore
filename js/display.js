@@ -300,77 +300,83 @@ function renderCustomerOrderHistory(containerId = 'orderHistoryList', activeStat
       <div style="margin-bottom: 16px;">
         <a href="profile.html?tab=orders" class="btn btn-secondary btn-sm">Xem tất cả lịch sử đơn hàng</a>
       </div>
-    ` : ''}${orders.map(o => {
-    const tone = getStatusTone(o.status);
-    const itemsHtml = (o.items || []).map(it => {
-      let p = null;
-      let sku = '';
-      let name = 'Sản phẩm';
-      let price = 0;
-      let qty = 1;
+    ` : ''}${orders.map(o => renderOrderCardHtml(o, allProducts)).join('')}`;
+}
 
-      if (Array.isArray(it)) {
-        const [id, q] = it;
-        p = allProducts.find(x => x.id === id);
-        name = p ? p.name : 'Sản phẩm';
-        price = p ? (p.basePrice || p.price) : 0;
-        qty = q;
-        sku = (p && p.variants && p.variants[0]) ? p.variants[0].sku : `SP00${id}-STD`;
-      } else {
-        sku = it.sku || '';
-        const found = typeof findVariantBySku === 'function' ? findVariantBySku(sku) : null;
-        p = found ? found.product : allProducts.find(x => x.id === it.productId);
-        name = it.name || (p ? p.name : 'Sản phẩm');
-        price = it.price || (found ? found.variant.price : (p ? p.basePrice || p.price : 0));
-        qty = it.qty || 1;
-      }
+/**
+ * Render thẻ HTML chi tiết một đơn hàng trong lịch sử đơn hàng
+ * Dùng chung giữa js/display.js và js/auth.js
+ */
+function renderOrderCardHtml(o, allProducts = []) {
+  const tone = typeof getStatusTone === 'function' ? getStatusTone(o.status) : 'neutral';
+  const itemsHtml = (o.items || []).map(it => {
+    let p = null;
+    let sku = '';
+    let name = 'Sản phẩm';
+    let price = 0;
+    let qty = 1;
 
-      const imgHtml = (p && p.image)
-        ? `<img src="${p.image}" style="max-height: 48px; max-width: 100%; object-fit: contain;" alt="" />`
-        : (p && typeof renderDeviceArt === 'function' ? renderDeviceArt(p, 'height:48px; width:auto;') : '📦');
+    if (Array.isArray(it)) {
+      const [id, q] = it;
+      p = allProducts.find(x => x.id === id);
+      name = p ? p.name : 'Sản phẩm';
+      price = p ? (p.basePrice || p.price) : 0;
+      qty = q;
+      sku = (p && p.variants && p.variants[0]) ? p.variants[0].sku : `SP00${id}-STD`;
+    } else {
+      sku = it.sku || '';
+      const found = typeof findVariantBySku === 'function' ? findVariantBySku(sku) : null;
+      p = found ? found.product : allProducts.find(x => x.id === it.productId);
+      name = it.name || (p ? p.name : 'Sản phẩm');
+      price = it.price || (found ? found.variant.price : (p ? p.basePrice || p.price : 0));
+      qty = it.qty || 1;
+    }
 
-      return `
-        <div class="order-item-mini-row">
-          <div class="order-item-mini-thumb" style="display: grid; place-items: center; overflow: hidden;">
-            ${imgHtml}
-          </div>
-          <div style="flex: 1;">
-            <div class="order-item-mini-name">${name}</div>
-            <div class="order-item-mini-qty">
-              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--color-brand-700);">${sku}</span> · Số lượng: ${qty} · Giá: ${vnd(price)}
-            </div>
-          </div>
-          <div style="font-weight: 600; font-size: 14px;">${vnd(price * qty)}</div>
-        </div>
-      `;
-    }).join('');
+    const imgHtml = (p && p.image)
+      ? `<img src="${p.image}" style="max-height: 48px; max-width: 100%; object-fit: contain;" alt="" />`
+      : (p && typeof renderDeviceArt === 'function' ? renderDeviceArt(p, 'height:48px; width:auto;') : '📦');
 
     return `
-      <div class="order-history-card">
-        <div class="order-card-header">
-          <div>
-            <span class="order-card-id">#${o.id}</span>
-            <span class="order-card-meta">${o.date} · Thanh toán: ${o.pay || 'Tiền mặt'}</span>
+      <div class="order-item-mini-row">
+        <div class="order-item-mini-thumb" style="display: grid; place-items: center; overflow: hidden;">
+          ${imgHtml}
+        </div>
+        <div style="flex: 1;">
+          <div class="order-item-mini-name">${name}</div>
+          <div class="order-item-mini-qty">
+            ${sku ? `<span style="font-family: var(--font-mono); font-size: 11px; color: var(--color-brand-700);">${sku}</span> · ` : ''}Số lượng: ${qty} · Giá: ${vnd(price)}
           </div>
-          <span class="badge badge-${tone}">${o.status}</span>
         </div>
-
-        <div class="order-card-items-list">
-          ${itemsHtml}
-        </div>
-
-        <div class="order-card-footer">
-          <span style="font-size: 14px; color: var(--color-ink-3);">Tổng tiền thanh toán</span>
-          <span class="order-total-price" style="color: var(--color-brand-600); font-size: 18px;">${vnd(o.total)}</span>
-        </div>
-        ${o.status === 'Mới đặt' ? `
-          <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
-            <button type="button" class="btn btn-ghost btn-sm" style="color: #dc2626;" onclick="handleCustomerCancelOrder('${o.id}')">Hủy đơn</button>
-          </div>
-        ` : ''}
+        <div style="font-weight: 600; font-size: 14px;">${vnd(price * qty)}</div>
       </div>
-      `;
-  }).join('')}`;
+    `;
+  }).join('');
+
+  return `
+    <div class="order-history-card">
+      <div class="order-card-header">
+        <div>
+          <span class="order-card-id">#${o.id}</span>
+          <span class="order-card-meta">${o.date} · Thanh toán: ${o.pay || 'Tiền mặt'}</span>
+        </div>
+        <span class="badge badge-${tone}">${o.status}</span>
+      </div>
+
+      <div class="order-card-items-list">
+        ${itemsHtml}
+      </div>
+
+      <div class="order-card-footer">
+        <span style="font-size: 14px; color: var(--color-ink-3);">Tổng tiền thanh toán</span>
+        <span class="order-total-price" style="color: var(--color-brand-600); font-size: 18px;">${vnd(o.total)}</span>
+      </div>
+      ${o.status === 'Mới đặt' ? `
+        <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+          <button type="button" class="btn btn-ghost btn-sm" style="color: #dc2626;" onclick="handleCustomerCancelOrder('${o.id}')">Hủy đơn</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
 }
 
 // Khách chỉ được hủy đơn "Mới đặt" thuộc tài khoản của mình; tồn kho được hoàn lại theo SKU.
@@ -400,12 +406,24 @@ function handleCustomerCancelOrder(orderId) {
         return;
       }
 
+      const allProds = getProducts();
+      let prodChanged = false;
       (target.items || []).forEach(item => {
-        updateVariantStock(item.sku, Math.max(1, Math.floor(Number(item.qty) || 1)));
+        const qty = Math.max(1, Math.floor(Number(item.qty) || 1));
+        updateVariantStock(item.sku, qty);
+        allProds.forEach(p => {
+          if (p.variants && p.variants.some(v => v.sku === item.sku)) {
+            p.sold = Math.max(0, (Number(p.sold) || 0) - qty);
+            p.soldCount = p.sold;
+            prodChanged = true;
+          }
+        });
       });
+      if (prodChanged) saveProducts(allProds);
+
       target.status = 'Đã huỷ';
       saveOrders(allOrders);
-      showToast(`Đã hủy đơn #${target.id} và hoàn trả tồn kho.`);
+      showToast(`Đã hủy đơn #${target.id}, hoàn trả tồn kho và cập nhật lượt bán.`);
 
       if (typeof window.switchProfileTab === 'function') {
         window.switchProfileTab('orders');
@@ -421,5 +439,6 @@ window.renderProductCard = renderProductCard;
 window.renderProductGrid = renderProductGrid;
 window.showToast = showToast;
 window.getStatusTone = getStatusTone;
+window.renderOrderCardHtml = renderOrderCardHtml;
 window.renderCustomerOrderHistory = renderCustomerOrderHistory;
 window.handleCustomerCancelOrder = handleCustomerCancelOrder;

@@ -1933,6 +1933,31 @@ function updateVariantStock(sku, delta) {
   }
 }
 
+/**
+ * Định dạng ngày hiện tại chuẩn DD/MM/YYYY (hoặc từ đối tượng Date / chuỗi YYYY-MM-DD)
+ */
+function formatCurrentDate(dateInput) {
+  let d;
+  if (!dateInput) {
+    d = new Date();
+  } else if (dateInput instanceof Date) {
+    d = dateInput;
+  } else if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    const [y, m, day] = dateInput.split('-').map(Number);
+    d = new Date(y, m - 1, day);
+  } else if (typeof dateInput === 'string' && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateInput)) {
+    return dateInput;
+  } else {
+    d = new Date(dateInput);
+  }
+
+  if (isNaN(d.getTime())) d = new Date();
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 // Tự động khởi tạo dữ liệu chuẩn ngay khi nạp file
 initDefaultData();
 
@@ -1944,3 +1969,4 @@ window.setBuyNow = setBuyNow;
 window.clearBuyNow = clearBuyNow;
 window.getOrdersForCurrentUser = getOrdersForCurrentUser;
 window.updateVariantStock = updateVariantStock;
+window.formatCurrentDate = formatCurrentDate;

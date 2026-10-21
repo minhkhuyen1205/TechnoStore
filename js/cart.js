@@ -784,7 +784,7 @@ function initCheckoutPage(options = {}) {
       customerEmail: customer.email || '',
       phone: activeAddress.receiverPhone || customer.phone || '',
       address: `${activeAddress.detail} (${activeAddress.label || 'Địa chỉ nhận hàng'})`,
-      date: new Date().toLocaleDateString('vi-VN'),
+      date: typeof formatCurrentDate === 'function' ? formatCurrentDate() : new Date().toLocaleDateString('vi-VN'),
       total: subtotal + ship,
       shippingFee: ship,
       status: 'Mới đặt',

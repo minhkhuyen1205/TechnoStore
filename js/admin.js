@@ -2621,7 +2621,7 @@ function initAdminPortal(options = {}) {
 
     const receiptId = generateNextReceiptId();
     const dateInput = document.getElementById('receiptDateInput');
-    const receiptDate = dateInput ? dateInput.value : new Date().toLocaleDateString('vi-VN');
+    const receiptDate = typeof formatCurrentDate === 'function' ? formatCurrentDate(dateInput ? dateInput.value : null) : (dateInput ? dateInput.value : new Date().toLocaleDateString('vi-VN'));
 
     let totalQty = 0;
     let totalAmount = 0;
@@ -2775,35 +2775,6 @@ function initAdminPortal(options = {}) {
     }
   };
 
-  window.handleMarginChange = (id, val) => {
-    margins[id] = Number(val) || 0;
-    render();
-  };
-
-  window.handleSavePricing = () => {
-    let updatedCount = 0;
-    products.forEach(p => {
-      if (p.variants) {
-        p.variants.forEach(v => {
-          if (skuPricingDraft[v.sku] && skuPricingDraft[v.sku].price !== undefined) {
-            const newPrice = Number(skuPricingDraft[v.sku].price);
-            if (!isNaN(newPrice) && newPrice > 0) {
-              v.price = newPrice;
-              updatedCount++;
-            }
-          }
-        });
-        const validPrices = p.variants.map(v => v.price).filter(pr => pr > 0);
-        if (validPrices.length > 0) {
-          p.basePrice = Math.min(...validPrices);
-          p.price = p.basePrice;
-        }
-      }
-    });
-    saveProducts(products);
-    showToast(`Đã lưu bảng giá thành công (${updatedCount > 0 ? updatedCount + ' SKU' : 'toàn bộ biến thể'})!`);
-    render();
-  };
 
   window.handleSavePricingForProduct = (prodId) => {
     const p = products.find(x => x.id === prodId);
@@ -2846,26 +2817,46 @@ function initAdminPortal(options = {}) {
 
     const oldStatus = targetOrder.status;
 
-    // Nếu đơn hàng bị hủy -> Hoàn trả tồn kho cho các biến thể
+    // Nếu đơn hàng bị hủy -> Hoàn trả tồn kho cho các biến thể & giảm lượt bán p.sold
     if (newStatus === 'Đã huỷ' && oldStatus !== 'Đã huỷ') {
+      const allProds = getProducts();
+      let prodChanged = false;
       (targetOrder.items || []).forEach(it => {
         const sku = it.sku;
         const q = it.qty || 1;
         if (sku) {
           updateVariantStock(sku, q);
+          allProds.forEach(p => {
+            if (p.variants && p.variants.some(v => v.sku === sku)) {
+              p.sold = Math.max(0, (Number(p.sold) || 0) - q);
+              p.soldCount = p.sold;
+              prodChanged = true;
+            }
+          });
         }
       });
-      showToast(`Đã hủy đơn #${id} và hoàn trả lại số lượng vào tồn kho!`);
+      if (prodChanged) saveProducts(allProds);
+      showToast(`Đã hủy đơn #${id}, hoàn trả tồn kho và cập nhật lượt bán!`);
     } else if (oldStatus === 'Đã huỷ' && newStatus !== 'Đã huỷ') {
-      // Nếu phục hồi lại đơn hàng -> Trừ lại tồn kho
+      // Nếu phục hồi lại đơn hàng -> Trừ lại tồn kho & cộng lại lượt bán p.sold
+      const allProds = getProducts();
+      let prodChanged = false;
       (targetOrder.items || []).forEach(it => {
         const sku = it.sku;
         const q = it.qty || 1;
         if (sku) {
           updateVariantStock(sku, -q);
+          allProds.forEach(p => {
+            if (p.variants && p.variants.some(v => v.sku === sku)) {
+              p.sold = (Number(p.sold) || 0) + q;
+              p.soldCount = p.sold;
+              prodChanged = true;
+            }
+          });
         }
       });
-      showToast(`Đã phục hồi đơn #${id} và cập nhật trừ tồn kho!`);
+      if (prodChanged) saveProducts(allProds);
+      showToast(`Đã phục hồi đơn #${id}, trừ tồn kho và cập nhật lượt bán!`);
     }
 
     targetOrder.status = newStatus;
