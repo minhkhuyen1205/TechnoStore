@@ -1,10 +1,5 @@
-/* ==========================================================================
-   Thành phần giao diện và bộ dựng hình thiết bị SVG
-   TechnoStore - JavaScript thuần
-   ========================================================================== */
-
 /**
- * Tạo hình minh họa thiết bị SVG tương tự phiên bản React ban đầu.
+ 
  * @param {Object} p - Thông tin sản phẩm
  * @param {string} className - Lớp CSS hoặc kiểu chiều cao tùy chọn
  */
@@ -249,14 +244,14 @@ function renderFloatingNav(containerId, options = {}) {
 /**
  * Hàm hỗ trợ hiển thị phân trang.
  */
-function renderPagination(currentPage, totalPages, clickCallbackName) {
+function renderPagination(currentPage, totalPages, clickCallbackName, iconPath = 'assets/icon/') {
   if (totalPages <= 1) return '';
   let html = `<nav class="pagination" aria-label="Phân trang">`;
 
   // Nút chuyển về trang trước.
   html += `
     <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="${clickCallbackName}(${currentPage - 1})" aria-label="Trang trước">
-      ‹
+      <img src="${iconPath}chevron-left.svg" class="icon icon-16" alt="Trang trước" />
     </button>
   `;
 
@@ -272,7 +267,7 @@ function renderPagination(currentPage, totalPages, clickCallbackName) {
   // Nút chuyển sang trang tiếp theo.
   html += `
     <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="${clickCallbackName}(${currentPage + 1})" aria-label="Trang sau">
-      ›
+      <img src="${iconPath}chevron-right.svg" class="icon icon-16" alt="Trang sau" />
     </button>
   `;
 
@@ -461,4 +456,3 @@ window.showCustomDialog = function (message, title = 'Thông báo', type = 'warn
 
   document.body.appendChild(overlay);
 };
-

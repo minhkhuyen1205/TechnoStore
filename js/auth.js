@@ -1,8 +1,3 @@
-/* ==========================================================================
-   Customer Authentication & Profile Controller
-   TechnoStore - Pure JavaScript
-   ========================================================================== */
-
 /**
  * Initialize Login & Register Page
  */

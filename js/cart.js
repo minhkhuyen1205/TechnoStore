@@ -1,7 +1,3 @@
-/* ==========================================================================
-   Cart & Checkout Controller (Quản lý theo SKU & Trừ tồn kho tự động)
-   TechnoStore - Pure Vanilla JavaScript (ES6+)
-   ========================================================================== */
 
 /**
  * Khởi tạo Trang Giỏ Hàng (Cart Page)
@@ -233,10 +229,6 @@ function initCartPage(options = {}) {
  * Khởi tạo Trang Thanh Toán (Checkout Page)
  * Nghiệp vụ chuẩn hóa:
  * 1. Phân biệt rõ ràng luồng 'Mua ngay' (1 sản phẩm tạm) và 'Giỏ hàng' (các sản phẩm trong giỏ)
- * 2. Quản lý sổ địa chỉ: Giữ Tên & SĐT tài khoản, cho phép Thêm/Sửa địa chỉ trực tiếp bằng Modal
- * 3. Bắt buộc kiểm tra địa chỉ và tồn kho trước khi Đặt hàng
- * 4. Sau khi đặt hàng thành công: Luồng Mua ngay chỉ xóa cờ tạm, giữ nguyên giỏ hàng chính
- * 5. Nút "Xem đơn hàng": Hiển thị DUY NHẤT đơn hàng vừa đặt thành công
  */
 function initCheckoutPage(options = {}) {
   const container = document.getElementById('checkoutPageContent');
