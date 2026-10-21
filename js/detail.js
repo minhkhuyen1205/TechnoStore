@@ -183,12 +183,8 @@ function renderVariantSelectionChips(p) {
           ${romList.map(rom => {
       const isActive = rom === selectedRom;
 
-      // Logic kiểm tra chéo:
-      // Nếu đã chọn Màu -> chỉ cho phép ROM nếu tồn tại (selectedColor + rom) với stock > 0
-      // Nếu chưa chọn Màu -> kiểm tra xem ROM này có tổng tồn kho > 0 trên tất cả các màu không
-      const isDisabled = selectedColor
-        ? !p.variants.some(v => v.rom === rom && v.color === selectedColor && (Number(v.stock) || 0) > 0)
-        : !p.variants.some(v => v.rom === rom && (Number(v.stock) || 0) > 0);
+      // Nút ROM bị disable nếu toàn bộ biến thể chứa ROM này đều hết hàng
+      const isDisabled = !p.variants.some(v => v.rom === rom && (Number(v.stock) || 0) > 0);
 
       const variantWithRom = p.variants.find(v => v.rom === rom && (selectedColor ? v.color === selectedColor : true))
         || p.variants.find(v => v.rom === rom);
@@ -230,12 +226,8 @@ function renderVariantSelectionChips(p) {
           ${colorList.map(color => {
       const isActive = color === selectedColor;
 
-      // Logic kiểm tra chéo:
-      // Nếu có romList và đã chọn ROM -> chỉ cho phép Màu nếu tồn tại (color + selectedRom) với stock > 0
-      // Nếu không có romList hoặc chưa chọn ROM -> kiểm tra xem Màu này có tồn kho > 0 không
-      const isDisabled = (romList.length > 0 && selectedRom)
-        ? !p.variants.some(v => v.color === color && v.rom === selectedRom && (Number(v.stock) || 0) > 0)
-        : !p.variants.some(v => v.color === color && (Number(v.stock) || 0) > 0);
+      // Nút Màu bị disable nếu toàn bộ biến thể chứa Màu này đều hết hàng
+      const isDisabled = !p.variants.some(v => v.color === color && (Number(v.stock) || 0) > 0);
 
       const dotColor = colorMap[color] || '#8c867b';
 
@@ -262,20 +254,31 @@ function renderVariantSelectionChips(p) {
 
 /**
  * Xử lý khi khách chọn Dung lượng (ROM)
- * Hỗ trợ toggle (click lại nút đang chọn sẽ bỏ chọn) và kiểm tra chéo
+ * Hỗ trợ toggle (click lại nút đang chọn sẽ bỏ chọn) và tự động chuyển Màu khả dụng
  */
 function handleSelectRom(rom) {
   if (!currentProduct || !currentProduct.variants) return;
 
-  const isDisabled = selectedColor
-    ? !currentProduct.variants.some(v => v.rom === rom && v.color === selectedColor && (Number(v.stock) || 0) > 0)
-    : !currentProduct.variants.some(v => v.rom === rom && (Number(v.stock) || 0) > 0);
-  if (isDisabled) return;
+  // Kiểm tra ROM có còn hàng không
+  const isAvailable = currentProduct.variants.some(v => v.rom === rom && (Number(v.stock) || 0) > 0);
+  if (!isAvailable) return;
 
   if (selectedRom === rom) {
     selectedRom = null;
   } else {
     selectedRom = rom;
+    // Nếu Màu hiện tại không tương thích với ROM vừa chọn, tự động chuyển sang Màu khả dụng đầu tiên
+    if (selectedColor) {
+      const matchVariant = currentProduct.variants.find(
+        v => v.rom === rom && v.color === selectedColor && (Number(v.stock) || 0) > 0
+      );
+      if (!matchVariant) {
+        const firstAvailColorVar = currentProduct.variants.find(
+          v => v.rom === rom && (Number(v.stock) || 0) > 0
+        );
+        selectedColor = firstAvailColorVar ? firstAvailColorVar.color : null;
+      }
+    }
   }
 
   syncVariantSelection();
@@ -283,22 +286,33 @@ function handleSelectRom(rom) {
 
 /**
  * Xử lý khi khách chọn Màu sắc (Color)
- * Hỗ trợ toggle (click lại nút đang chọn sẽ bỏ chọn) và kiểm tra chéo
+ * Hỗ trợ toggle (click lại nút đang chọn sẽ bỏ chọn) và tự động chuyển ROM khả dụng
  */
 function handleSelectColor(color) {
   if (!currentProduct || !currentProduct.variants) return;
 
   const { romList } = getVariantLists(currentProduct);
 
-  const isDisabled = (romList.length > 0 && selectedRom)
-    ? !currentProduct.variants.some(v => v.color === color && v.rom === selectedRom && (Number(v.stock) || 0) > 0)
-    : !currentProduct.variants.some(v => v.color === color && (Number(v.stock) || 0) > 0);
-  if (isDisabled) return;
+  // Kiểm tra Màu có còn hàng không
+  const isAvailable = currentProduct.variants.some(v => v.color === color && (Number(v.stock) || 0) > 0);
+  if (!isAvailable) return;
 
   if (selectedColor === color) {
     selectedColor = null;
   } else {
     selectedColor = color;
+    // Nếu có ROM và ROM hiện tại không tương thích với Màu vừa chọn, tự động chuyển sang ROM khả dụng đầu tiên
+    if (romList.length > 0 && selectedRom) {
+      const matchVariant = currentProduct.variants.find(
+        v => v.color === color && v.rom === selectedRom && (Number(v.stock) || 0) > 0
+      );
+      if (!matchVariant) {
+        const firstAvailRomVar = currentProduct.variants.find(
+          v => v.color === color && (Number(v.stock) || 0) > 0
+        );
+        selectedRom = firstAvailRomVar ? firstAvailRomVar.rom : null;
+      }
+    }
   }
 
   syncVariantSelection();
@@ -786,66 +800,6 @@ function handleDetailBuyNow() {
   window.location.href = 'checkout.html';
 }
 
-/**
- * Hiển thị Modal yêu cầu Đăng nhập (Chặn khách chưa đăng nhập)
- */
-function showAuthRequiredModal() {
-  let modal = document.getElementById('authRequiredModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'authRequiredModal';
-    modal.className = 'modal-overlay pop';
-    modal.innerHTML = `
-      <div class="modal-box auth-modal-card">
-        <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--color-brand-50); display: grid; place-items: center; margin: 0 auto 16px;">
-          <img src="../../assets/icon/con-nguoi.svg" class="icon icon-28" alt="" />
-        </div>
-        <h3 style="font-size: 20px; font-weight: 700; color: var(--color-ink);">Yêu cầu đăng nhập</h3>
-        <p style="font-size: 14px; color: var(--color-ink-3); margin-top: 8px; line-height: 1.5;">
-          Bạn cần đăng nhập tài khoản TechnoStore để thực hiện thêm sản phẩm vào giỏ hàng và đặt hàng.
-        </p>
-
-        <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 10px;">
-          <a href="login.html" class="btn btn-primary btn-lg btn-full">
-            Đăng nhập ngay
-          </a>
-          <button type="button" class="btn btn-secondary btn-md btn-full" onclick="quickGuestLoginDemo()">
-            Đăng nhập nhanh (Tài khoản mẫu Nguyễn Minh Anh)
-          </button>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="closeAuthRequiredModal()">
-            Để sau
-          </button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-  }
-  modal.style.display = 'grid';
-}
-
-function closeAuthRequiredModal() {
-  const modal = document.getElementById('authRequiredModal');
-  if (modal) modal.style.display = 'none';
-}
-
-/**
- * Đăng nhập nhanh tài khoản demo cho tiện kiểm thử đồ án
- */
-function quickGuestLoginDemo() {
-  setCurrentUser({
-    id: 'KH001',
-    name: 'Nguyễn Minh Anh',
-    email: 'minhanh@mail.com',
-    phone: '0901 234 567'
-  });
-  closeAuthRequiredModal();
-  showToast('Đăng nhập thành công với tài khoản Nguyễn Minh Anh!');
-  // Tải lại Header để cập nhật tên người dùng
-  renderStoreHeader('headerContainer', {
-    basePath: '../../',
-    viewPath: '../'
-  });
-}
 
 /**
  * Chuyển đổi tab Thông số / Mô tả

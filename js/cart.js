@@ -664,7 +664,7 @@ function initCheckoutPage(options = {}) {
    * XỬ LÝ ĐẶT HÀNG & TRỪ TỒN KHO TỰ ĐỘNG
    */
   window.handlePlaceOrder = () => {
-    // 1. Kiểm tra địa chỉ nhận hàng: BẮT BUỘC CÓ ĐỊA CHỈ
+    // 1. Kiểm tra tài khoản có bị khóa không
     const customers = getCustomers();
     const customer = customers.find(c =>
       (currentUser.id && c.id === currentUser.id) ||
@@ -672,6 +672,12 @@ function initCheckoutPage(options = {}) {
       (currentUser.phone && c.phone === currentUser.phone)
     ) || currentUser;
 
+    if (customer && customer.locked) {
+      showCustomDialog('Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên!', 'Tài khoản bị khóa', 'error');
+      return;
+    }
+
+    // 2. Kiểm tra địa chỉ nhận hàng: BẮT BUỘC CÓ ĐỊA CHỈ
     const addresses = Array.isArray(customer.addresses) ? customer.addresses : [];
     const activeAddress = addresses.find(a => a.id === selectedAddressId) || (addresses.length > 0 ? addresses[0] : null);
 
