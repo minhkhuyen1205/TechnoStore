@@ -4,12 +4,12 @@ let selectedRom = null;
 let selectedVariant = null;
 let selectedQty = 1;
 let currentDetailTab = 'spec';
+let lastSelectedGroup = 'color';
 
 /**
  * Khởi tạo trang Chi tiết Sản phẩm
  */
 function initDetailPage() {
-  // Lấy ID từ URL (Hỗ trợ cả ID số 1 và mã code SP001)
   const urlParams = new URLSearchParams(window.location.search);
   const rawId = urlParams.get('id') || '1';
 
@@ -26,11 +26,12 @@ function initDetailPage() {
     return;
   }
 
-  // Reset lựa chọn để syncVariantSelection khởi tạo biến thể mặc định nếu không cần chọn.
+  // Khởi tạo trang: Để trống hoàn toàn lựa chọn ban đầu
   selectedColor = null;
   selectedRom = null;
   selectedVariant = null;
   selectedQty = 1;
+  lastSelectedGroup = 'color';
 
   syncVariantSelection();
   loadProductDetails(currentProduct, allProducts);
@@ -69,11 +70,11 @@ function loadProductDetails(p, allProducts) {
     thumbsContainer.innerHTML = thumbsHtml;
   }
 
-  // 3. Tên và Thông tin Meta (Chỉ hiển thị Tên SP và Thương hiệu, xóa hoàn toàn Mã SP và SKU)
+  // 3. Tên và Thông tin Meta
   const titleEl = document.getElementById('productTitle');
   if (titleEl) titleEl.textContent = p.name;
 
-  // 4. Render Ma trận Chips Biến thể (Variant Matrix Chips)
+  // 4. Render Ma trận Chips Biến thể
   renderVariantSelectionChips(p);
 
   // 5. Cập nhật dữ liệu động (Giá, Tồn kho, Trạng thái nút)
@@ -89,7 +90,7 @@ function loadProductDetails(p, allProducts) {
       `${p.name} mang đến trải nghiệm cao cấp với hiệu năng mạnh mẽ từ chip xử lý ${p.chip || 'thế hệ mới'}, màn hình ${p.screen || 'sắc nét'} và hệ thống camera chuyên nghiệp ${p.camera || ''}. Sản phẩm chính hãng, bảo hành 12 tháng tại hệ thống TechnoStore.`;
   }
 
-  // 8. Sản phẩm tương tự (Related Products) - Ẩn hoàn toàn các sản phẩm hết hàng (totalStock === 0)
+  // 8. Sản phẩm tương tự (Related Products)
   const related = allProducts.filter(x => x.id !== p.id && x.category === p.category && (Number(x.stock) || 0) > 0).slice(0, 4);
   const relatedGrid = document.getElementById('relatedProductsGrid');
   const relatedSection = document.querySelector('.related-section');
@@ -113,13 +114,11 @@ function getGroupedSpecs(p) {
   let romStr = '';
 
   if (p && Array.isArray(p.variants) && p.variants.length > 0) {
-    // Lọc danh sách RAM độc lập không trùng lặp
     const ramList = Array.from(new Set(
       p.variants.map(v => v.ram).filter(Boolean).filter(r => r !== 'Tiêu chuẩn')
     ));
     ramStr = ramList.length > 0 ? ramList.join(' - ') : (p.ram || '');
 
-    // Lọc danh sách ROM độc lập không trùng lặp
     const romList = Array.from(new Set(
       p.variants.map(v => v.rom).filter(Boolean).filter(r => r !== 'Tiêu chuẩn')
     ));
@@ -139,11 +138,13 @@ function getVariantLists(p) {
   return { romList, colorList };
 }
 
+/**
+ * Render Ma trận Chips Biến thể
+ */
 function renderVariantSelectionChips(p) {
   const container = document.getElementById('variantSelectorContainer');
   if (!container || !p.variants || p.variants.length === 0) return;
 
-  // Lọc danh sách ROM và Màu sắc hợp lệ (loại bỏ null, rỗng và 'Tiêu chuẩn')
   const { romList, colorList } = getVariantLists(p);
 
   const colorMap = {
@@ -165,13 +166,19 @@ function renderVariantSelectionChips(p) {
 
   let html = '';
 
-  // 1. Render cụm Dung lượng (ROM / Bộ nhớ trong) nếu có
+  // 1. Render cụm Dung lượng (ROM)
   if (romList.length > 0) {
     const romTitle = p.category === 'Đồng hồ thông minh' ? 'Chọn bộ nhớ:' : 'Chọn dung lượng bộ nhớ:';
-    const currentRam = (selectedVariant && selectedVariant.ram && selectedVariant.ram !== 'Tiêu chuẩn')
-      ? selectedVariant.ram
-      : (p.ram && p.ram !== 'Tiêu chuẩn' ? p.ram : '');
-    const currentRamRomTitle = selectedRom ? (currentRam ? `${currentRam}/${selectedRom}` : selectedRom) : '';
+
+    let currentRamRomTitle = '';
+    if (selectedRom) {
+      const matchVar = p.variants.find(v => v.rom === selectedRom && (selectedColor ? v.color === selectedColor : true))
+        || p.variants.find(v => v.rom === selectedRom);
+      const ramVal = (matchVar && matchVar.ram && matchVar.ram !== 'Tiêu chuẩn')
+        ? matchVar.ram
+        : (p.ram && p.ram !== 'Tiêu chuẩn' ? p.ram : '');
+      currentRamRomTitle = ramVal ? `${ramVal}/${selectedRom}` : selectedRom;
+    }
 
     html += `
       <div class="variant-group-box">
@@ -181,36 +188,40 @@ function renderVariantSelectionChips(p) {
         </div>
         <div class="variant-chips-grid">
           ${romList.map(rom => {
-      const isActive = rom === selectedRom;
+            const isActive = rom === selectedRom;
 
-      // Nút ROM bị disable nếu toàn bộ biến thể chứa ROM này đều hết hàng
-      const isDisabled = !p.variants.some(v => v.rom === rom && (Number(v.stock) || 0) > 0);
+            // Kiểm tra bôi xám nút ROM:
+            // - Nếu đã chọn Color: Chỉ mở các nút ROM có tồn kho thuộc Color đó.
+            // - Nếu chưa chọn Color: Mở toàn bộ nút ROM có tồn kho trên toàn sản phẩm.
+            const isDisabled = selectedColor
+              ? !p.variants.some(v => v.color === selectedColor && v.rom === rom && (Number(v.stock) || 0) > 0)
+              : !p.variants.some(v => v.rom === rom && (Number(v.stock) || 0) > 0);
 
-      const variantWithRom = p.variants.find(v => v.rom === rom && (selectedColor ? v.color === selectedColor : true))
-        || p.variants.find(v => v.rom === rom);
-      const ramVal = (variantWithRom && variantWithRom.ram && variantWithRom.ram !== 'Tiêu chuẩn')
-        ? variantWithRom.ram
-        : (p.ram && p.ram !== 'Tiêu chuẩn' ? p.ram : '');
-      const ramRomLabel = ramVal ? `${ramVal}/${rom}` : rom;
+            const variantWithRom = p.variants.find(v => v.rom === rom && (selectedColor ? v.color === selectedColor : true))
+              || p.variants.find(v => v.rom === rom);
+            const ramVal = (variantWithRom && variantWithRom.ram && variantWithRom.ram !== 'Tiêu chuẩn')
+              ? variantWithRom.ram
+              : (p.ram && p.ram !== 'Tiêu chuẩn' ? p.ram : '');
+            const ramRomLabel = ramVal ? `${ramVal}/${rom}` : rom;
 
-      return `
+            return `
               <button
                 type="button"
                 class="variant-chip-btn ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}"
                 onclick="handleSelectRom('${rom}')"
                 aria-label="Chọn dung lượng ${ramRomLabel}"
-                ${isDisabled ? 'disabled tabindex="-1" style="pointer-events:none; cursor:not-allowed;"' : ''}
+                ${isDisabled ? 'disabled tabindex="-1" style="opacity:0.4; cursor:not-allowed; pointer-events:none; background:#f1f5f9;"' : ''}
               >
                 <b>${ramRomLabel}</b>
               </button>
             `;
-    }).join('')}
+          }).join('')}
         </div>
       </div>
     `;
   }
 
-  // 2. Render cụm Màu sắc / Phân loại / Quy cách
+  // 2. Render cụm Màu sắc
   if (colorList.length > 0) {
     let colorTitle = 'Chọn màu sắc:';
     if (p.category === 'Phụ kiện') colorTitle = 'Chọn phân loại / quy cách:';
@@ -224,26 +235,30 @@ function renderVariantSelectionChips(p) {
         </div>
         <div class="variant-chips-grid">
           ${colorList.map(color => {
-      const isActive = color === selectedColor;
+            const isActive = color === selectedColor;
 
-      // Nút Màu bị disable nếu toàn bộ biến thể chứa Màu này đều hết hàng
-      const isDisabled = !p.variants.some(v => v.color === color && (Number(v.stock) || 0) > 0);
+            // Kiểm tra bôi xám nút Màu sắc:
+            // - Nếu vừa click nhóm ROM và đang chọn ROM: Chỉ mở các Màu có tồn kho thuộc ROM đó.
+            // - Ngược lại: Mở toàn bộ nút Màu sắc có tồn kho trên toàn sản phẩm.
+            const isDisabled = (lastSelectedGroup === 'rom' && selectedRom)
+              ? !p.variants.some(v => v.rom === selectedRom && v.color === color && (Number(v.stock) || 0) > 0)
+              : !p.variants.some(v => v.color === color && (Number(v.stock) || 0) > 0);
 
-      const dotColor = colorMap[color] || '#8c867b';
+            const dotColor = colorMap[color] || '#8c867b';
 
-      return `
+            return `
               <button
                 type="button"
                 class="variant-chip-btn ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}"
                 onclick="handleSelectColor('${color}')"
                 aria-label="Chọn ${color}"
-                ${isDisabled ? 'disabled tabindex="-1" style="pointer-events:none; cursor:not-allowed;"' : ''}
+                ${isDisabled ? 'disabled tabindex="-1" style="opacity:0.4; cursor:not-allowed; pointer-events:none; background:#f1f5f9;"' : ''}
               >
                 <span class="variant-color-dot" style="background-color: ${dotColor};"></span>
                 <span>${color}</span>
               </button>
             `;
-    }).join('')}
+          }).join('')}
         </div>
       </div>
     `;
@@ -253,31 +268,30 @@ function renderVariantSelectionChips(p) {
 }
 
 /**
- * Xử lý khi khách chọn Dung lượng (ROM)
- * Hỗ trợ toggle (click lại nút đang chọn sẽ bỏ chọn) và tự động chuyển Màu khả dụng
+ * Xử lý khi chọn Dung lượng (ROM)
+ * Hỗ trợ Toggle-off (Bấm lại nút đang chọn sẽ tắt chọn về null)
  */
 function handleSelectRom(rom) {
   if (!currentProduct || !currentProduct.variants) return;
 
-  // Kiểm tra ROM có còn hàng không
-  const isAvailable = currentProduct.variants.some(v => v.rom === rom && (Number(v.stock) || 0) > 0);
-  if (!isAvailable) return;
-
   if (selectedRom === rom) {
+    // Bấm lại chính nút đang chọn -> Hủy chọn về null
     selectedRom = null;
   } else {
     selectedRom = rom;
-    // Nếu Màu hiện tại không tương thích với ROM vừa chọn, tự động chuyển sang Màu khả dụng đầu tiên
-    if (selectedColor) {
-      const matchVariant = currentProduct.variants.find(
-        v => v.rom === rom && v.color === selectedColor && (Number(v.stock) || 0) > 0
-      );
-      if (!matchVariant) {
-        const firstAvailColorVar = currentProduct.variants.find(
-          v => v.rom === rom && (Number(v.stock) || 0) > 0
-        );
-        selectedColor = firstAvailColorVar ? firstAvailColorVar.color : null;
-      }
+    lastSelectedGroup = 'rom';
+
+    // Lấy danh sách các Màu còn hàng của mức ROM vừa bấm
+    const validColorVariants = currentProduct.variants.filter(
+      v => v.rom === rom && (Number(v.stock) || 0) > 0
+    );
+
+    const hasCurrentMatch = validColorVariants.some(v => v.color === selectedColor);
+    
+    // Nếu chưa chọn Màu HOẶC Màu đang chọn không có ở mức ROM này
+    // -> TỰ ĐỘNG CHỌN MÀU KHIỂN DỤNG ĐẦU TIÊN TƯƠNG ỨNG
+    if ((!selectedColor || !hasCurrentMatch) && validColorVariants.length > 0) {
+      selectedColor = validColorVariants[0].color;
     }
   }
 
@@ -285,32 +299,32 @@ function handleSelectRom(rom) {
 }
 
 /**
- * Xử lý khi khách chọn Màu sắc (Color)
- * Hỗ trợ toggle (click lại nút đang chọn sẽ bỏ chọn) và tự động chuyển ROM khả dụng
+ * Xử lý khi chọn Màu sắc (Color)
+ * Hỗ trợ Toggle-off (Bấm lại nút đang chọn sẽ tắt chọn về null)
  */
 function handleSelectColor(color) {
   if (!currentProduct || !currentProduct.variants) return;
 
-  const { romList } = getVariantLists(currentProduct);
-
-  // Kiểm tra Màu có còn hàng không
-  const isAvailable = currentProduct.variants.some(v => v.color === color && (Number(v.stock) || 0) > 0);
-  if (!isAvailable) return;
-
   if (selectedColor === color) {
+    // Bấm lại chính nút đang chọn -> Hủy chọn về null
     selectedColor = null;
   } else {
     selectedColor = color;
-    // Nếu có ROM và ROM hiện tại không tương thích với Màu vừa chọn, tự động chuyển sang ROM khả dụng đầu tiên
-    if (romList.length > 0 && selectedRom) {
-      const matchVariant = currentProduct.variants.find(
-        v => v.color === color && v.rom === selectedRom && (Number(v.stock) || 0) > 0
+    lastSelectedGroup = 'color';
+
+    const { romList } = getVariantLists(currentProduct);
+    if (romList.length > 0) {
+      // Lấy danh sách các ROM còn hàng của Màu vừa bấm
+      const validRomVariants = currentProduct.variants.filter(
+        v => v.color === color && (Number(v.stock) || 0) > 0
       );
-      if (!matchVariant) {
-        const firstAvailRomVar = currentProduct.variants.find(
-          v => v.color === color && (Number(v.stock) || 0) > 0
-        );
-        selectedRom = firstAvailRomVar ? firstAvailRomVar.rom : null;
+
+      const hasCurrentMatch = validRomVariants.some(v => v.rom === selectedRom);
+
+      // Nếu chưa chọn ROM HOẶC ROM đang chọn không có ở Màu này
+      // -> TỰ ĐỘNG CHỌN ROM KHẢ DỤNG ĐẦU TIÊN TƯƠNG ỨNG
+      if ((!selectedRom || !hasCurrentMatch) && validRomVariants.length > 0) {
+        selectedRom = validRomVariants[0].rom;
       }
     }
   }
@@ -325,14 +339,13 @@ function syncVariantSelection() {
   if (!currentProduct || !currentProduct.variants) return;
 
   const { romList, colorList } = getVariantLists(currentProduct);
-
   const hasRomOptions = romList.length > 0;
   const hasColorOptions = colorList.length > 0;
 
   if (currentProduct.variants.length === 1) {
     selectedVariant = currentProduct.variants[0] || null;
-    selectedColor = colorList.includes(selectedVariant && selectedVariant.color) ? selectedVariant.color : null;
-    selectedRom = romList.includes(selectedVariant && selectedVariant.rom) ? selectedVariant.rom : null;
+    selectedColor = colorList.includes(selectedVariant?.color) ? selectedVariant.color : null;
+    selectedRom = romList.includes(selectedVariant?.rom) ? selectedVariant.rom : null;
   } else if (!hasRomOptions && !hasColorOptions) {
     selectedVariant = currentProduct.variants[0] || null;
   } else if (hasRomOptions && hasColorOptions) {
@@ -341,10 +354,9 @@ function syncVariantSelection() {
         v => v.color === selectedColor && v.rom === selectedRom
       ) || null;
     } else {
-      selectedVariant = null;
+      selectedVariant = null; // Cả hai chưa được chọn đủ -> Giữ selectedVariant = null
     }
   } else if (hasColorOptions && !hasRomOptions) {
-    // Với Tai nghe / Phụ kiện chỉ có 1 nhóm thuộc tính Màu sắc/Quy cách thì chọn trực tiếp nút đó
     selectedVariant = selectedColor
       ? (currentProduct.variants.find(v => v.color === selectedColor) || null)
       : null;
@@ -353,27 +365,20 @@ function syncVariantSelection() {
       ? (currentProduct.variants.find(v => v.rom === selectedRom) || null)
       : null;
   } else {
-    selectedVariant = currentProduct.variants[0] || null;
+    selectedVariant = null;
   }
 
-  // Reset số lượng chọn về 1
   selectedQty = 1;
   const qtyValEl = document.getElementById('detailQtyVal');
   if (qtyValEl) qtyValEl.textContent = selectedQty;
 
-  // Render lại trạng thái active & disabled của Chips
   renderVariantSelectionChips(currentProduct);
-
-  // Cập nhật giá bán, badge tồn kho và trạng thái nút mua
   updateVariantDisplay();
-
-  // Cập nhật lại bảng specs table
   renderSpecsTable(currentProduct);
 }
 
 /**
  * Cập nhật Real-time: Giá bán, Tồn kho, Thương hiệu và trạng thái nút Mua
- * Đảm bảo KHÔNG hiển thị Mã SP và SKU dưới tên sản phẩm.
  */
 function updateVariantDisplay() {
   if (!currentProduct) return;
@@ -384,9 +389,7 @@ function updateVariantDisplay() {
   const badgeContainer = document.getElementById('stockBadgeContainer');
   const stockNoteEl = document.getElementById('maxStockNote');
 
-  // Chỉ hiển thị Thương hiệu (Đã xóa hoàn toàn Mã SP và SKU)
   if (metaEl) {
-    // Giữ thông tin social proof ổn định cả khi khách đổi phiên bản sản phẩm.
     metaEl.innerHTML = `Thương hiệu: <b>${currentProduct.brand || 'Chính hãng'}</b> · <span style="color:#d97706;">★ ${Number(currentProduct.rating ?? 5).toFixed(1)}</span> · Đã bán ${Number(currentProduct.sold ?? currentProduct.soldCount) || 0}`;
   }
 
@@ -401,7 +404,6 @@ function updateVariantDisplay() {
   const activeRam = (selectedVariant && selectedVariant.ram) ? selectedVariant.ram : ramStr;
   const activeRom = (selectedVariant && selectedVariant.rom) ? selectedVariant.rom : romStr;
 
-  // Cập nhật Quick Specs Grid trên đầu trang
   const quickSpecsGrid = document.getElementById('quickSpecsGrid');
   if (quickSpecsGrid) {
     if (currentProduct.category === 'Điện thoại' || currentProduct.category === 'Máy tính bảng') {
@@ -471,11 +473,7 @@ function updateVariantDisplay() {
     }
   }
 
-  // =========================================================================
-  // HELPER: Cập nhật giao diện Hết hàng (Ảnh bôi xám + badge, Nút TẠM HẾT HÀNG duy nhất)
-  // =========================================================================
   function applyOutOfStockState(isOutOfStock) {
-    // 1. Hình ảnh sản phẩm: Bôi xám nhẹ đè nhãn/badge "HẾT HÀNG"
     const galleryMain = document.getElementById('galleryMainArt');
     if (galleryMain) {
       const artMedia = galleryMain.querySelector('img') || galleryMain.querySelector('svg');
@@ -504,7 +502,6 @@ function updateVariantDisplay() {
       }
     }
 
-    // 2. Nút mua hàng: Nếu biến thể chọn/toàn bộ sản phẩm stock === 0 -> Đổi thành duy nhất 1 nút "TẠM HẾT HÀNG"
     const actionContainer = document.querySelector('.detail-action-buttons');
     if (actionContainer) {
       if (isOutOfStock) {
@@ -527,7 +524,6 @@ function updateVariantDisplay() {
       }
     }
 
-    // 3. Khóa stepper số lượng khi hết hàng
     const qtyBtns = document.querySelectorAll('.qty-btn');
     qtyBtns.forEach(btn => {
       btn.disabled = isOutOfStock;
@@ -536,9 +532,7 @@ function updateVariantDisplay() {
     });
   }
 
-  // =========================================================================
-  // TRƯỜNG HỢP 1: Khách chưa chọn đủ thuộc tính biến thể (selectedVariant = null)
-  // =========================================================================
+  // Nếu chưa chọn đủ biến thể (selectedVariant = null)
   if (!selectedVariant) {
     const prices = allVariants.map(v => Number(v.price) || 0).filter(Boolean);
     const minPrice = prices.length ? Math.min(...prices) : (currentProduct.price || 0);
@@ -566,7 +560,6 @@ function updateVariantDisplay() {
       if (isTotallyOut) {
         badgeContainer.innerHTML = `<span class="badge badge-danger">Hết hàng</span>`;
       } else {
-        // Không hiển thị badge nhắc chọn phiên bản phía trên tiêu đề sản phẩm.
         badgeContainer.innerHTML = '';
       }
     }
@@ -575,14 +568,11 @@ function updateVariantDisplay() {
       stockNoteEl.textContent = isTotallyOut ? 'Tạm thời hết hàng' : selectNotice;
     }
 
-    // Áp dụng trạng thái Hết hàng / Còn hàng
     applyOutOfStockState(isTotallyOut);
     return;
   }
 
-  // =========================================================================
-  // TRƯỜNG HỢP 2: Khách ĐÃ chọn đủ thuộc tính biến thể
-  // =========================================================================
+  // Khi đã chọn đủ biến thể
   if (priceEl) priceEl.textContent = vnd(selectedVariant.price);
 
   if (oldPriceEl) {
@@ -607,11 +597,10 @@ function updateVariantDisplay() {
     stockNoteEl.textContent = isOut ? 'Tạm thời hết hàng' : `Tối đa ${selectedVariant.stock} sản phẩm`;
   }
 
-  // Áp dụng trạng thái Hết hàng / Còn hàng
   applyOutOfStockState(isOut);
 }
 
-//Render Bảng thông số kỹ thuật động theo từng danh mục
+// Render Bảng thông số kỹ thuật động theo từng danh mục
 function renderSpecsTable(p) {
   const container = document.getElementById('specsRowsContainer');
   if (!container || !p) return;
@@ -671,7 +660,6 @@ function renderSpecsTable(p) {
     ];
   }
 
-  // Lọc chỉ giữ lại các dòng CÓ DỮ LIỆU thực tế (bỏ các dòng rỗng hoặc '-')
   const validSpecs = candidateSpecs.filter(([k, v]) => {
     if (!v) return false;
     const str = String(v).trim();
@@ -718,10 +706,7 @@ function selectThumb(el) {
 }
 
 /**
- * RÀNG BUỘC NGHIỆP VỤ CHỌN BIẾN THỂ & KIỂM TRA TỒN KHO:
- * 1. BẮT BUỘC CHỌN ĐỦ THUỘC TÍNH (Màu sắc & Phiên bản/Dung lượng)
- * 2. CHO PHÉP KHÁCH CHƯA ĐĂNG NHẬP THÊM VÀO GIỎ (Guest Cart)
- * 3. KIỂM TRA TỒN KHO THỰC TẾ TRƯỚC KHI THỰC HIỆN
+ * RÀNG BUỘC NGHIỆP VỤ CHỌN BIẾN THỂ & KIỂM TRA TỒN KHO
  */
 function validateVariantSelection() {
   if (!currentProduct) return false;
@@ -731,13 +716,11 @@ function validateVariantSelection() {
   const hasRomOptions = romList.length > 0;
   const hasColorOptions = colorList.length > 0;
 
-  // Bắt buộc chọn đầy đủ phiên bản (chưa chọn -> bật showCustomDialog)
   if ((hasColorOptions && !selectedColor) || (hasRomOptions && !selectedRom) || !selectedVariant) {
     showCustomDialog('Vui lòng chọn đầy đủ phiên bản!', 'Thông báo', 'warning');
     return false;
   }
 
-  // Bắt buộc kiểm tra tồn kho
   if ((selectedVariant.stock || 0) <= 0) {
     showCustomDialog('Phiên bản này hiện đã hết hàng, vui lòng chọn phiên bản khác!', 'Hết hàng', 'warning');
     return false;
@@ -753,10 +736,6 @@ function validateVariantSelection() {
 
 /**
  * Xử lý bấm "Thêm vào giỏ"
- * Nghiệp vụ:
- * - Khách chưa đăng nhập vẫn thêm được vào giỏ hàng (Guest Cart)
- * - Chỉ lưu vào mảng giỏ hàng chính và cập nhật số lượng badge
- * - Tuyệt đối KHÔNG chuyển trang
  */
 function handleDetailAddToCart() {
   if (!validateVariantSelection()) return;
@@ -771,35 +750,25 @@ function handleDetailAddToCart() {
 
 /**
  * Xử lý bấm "Mua ngay"
- * Nghiệp vụ:
- * - Bắt buộc chọn đủ biến thể (chưa chọn -> showCustomDialog('Vui lòng chọn đầy đủ phiên bản!'))
- * - Lưu riêng thông tin item mua ngay vào LocalStorage dạng cờ/key tạm 'techno_buy_now' (không can thiệp mảng giỏ hàng chính)
- * - Nếu quay lại bấm Mua ngay tiếp: Cập nhật lại sản phẩm tạm (hoặc cộng dồn nếu cùng 1 SKU)
- * - Chuyển thẳng sang trang Thanh toán checkout.html
  */
 function handleDetailBuyNow() {
   if (!validateVariantSelection()) return;
 
-  // Lấy dữ liệu mua ngay tạm trước đó
   const prevBuyNow = getStorage('techno_buy_now', null);
   let qtyToBuy = selectedQty;
 
   if (prevBuyNow && prevBuyNow.sku === selectedVariant.sku) {
-    // Nếu cùng 1 SKU thì cộng dồn nhưng không vượt quá tồn kho khả dụng
     qtyToBuy = Math.min(selectedVariant.stock, (Number(prevBuyNow.qty) || 0) + selectedQty);
   }
 
-  // Lưu riêng vào LocalStorage tạm (Giỏ hàng chính techno_cart giữ nguyên)
   setStorage('techno_buy_now', {
     sku: selectedVariant.sku,
     productId: currentProduct.id,
     qty: qtyToBuy
   });
 
-  // Chuyển thẳng sang trang Thanh toán
   window.location.href = 'checkout.html';
 }
-
 
 /**
  * Chuyển đổi tab Thông số / Mô tả
