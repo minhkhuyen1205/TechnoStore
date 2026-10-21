@@ -324,17 +324,16 @@ function initProfilePage(options = {}) {
 
     // PHÂN QUYỀN LỊCH SỬ ĐƠN HÀNG: Chỉ lọc các đơn hàng của RIÊNG tài khoản đang đăng nhập
     const userOrders = allOrders.filter(o => {
+      if (user.id && o.customerId && String(user.id) === String(o.customerId)) return true;
+
       const uEmail = (user.email || '').trim().toLowerCase();
       const uPhone = (user.phone || '').replace(/\D/g, '');
-      const uName = (user.name || '').trim().toLowerCase();
 
       const oEmail = (o.customerEmail || '').trim().toLowerCase();
       const oPhone = (o.phone || '').replace(/\D/g, '');
-      const oName = (o.customer || '').trim().toLowerCase();
 
       if (uEmail && oEmail && uEmail === oEmail) return true;
       if (uPhone && oPhone && uPhone === oPhone) return true;
-      if (uName && oName && uName === oName) return true;
       return false;
     });
 

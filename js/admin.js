@@ -381,7 +381,7 @@ function initAdminPortal(options = {}) {
             <button class="action-icon-btn" title="${r.locked ? 'Mở khoá' : 'Khoá'}" onclick="handleToggleLockUser('${r.id}')">
               <img src="${iconPath}${r.locked ? 'unclock.svg' : 'lock.svg'}" class="icon icon-16" alt="Khoá" />
             </button>
-            <button class="action-icon-btn" title="Reset mật khẩu" onclick="handleResetUserPass('${r.name}')">
+            <button class="action-icon-btn" title="Reset mật khẩu" onclick="handleResetUserPass('${r.id}', '${r.name}')">
               <img src="${iconPath}refresh.svg" class="icon icon-16" alt="Reset" />
             </button>
           </div>
@@ -1042,16 +1042,18 @@ function initAdminPortal(options = {}) {
   function renderProductMatrixForm() {
     const isEdit = editingProductId !== null;
     const currentProd = isEdit ? products.find(p => p.id === editingProductId) : null;
-    const currentCat = formSelectedCategory || (currentProd ? currentProd.category : (categories[0] || 'Điện thoại'));
+    const firstCatName = categories[0] ? (typeof categories[0] === 'string' ? categories[0] : (categories[0].name || 'Điện thoại')) : 'Điện thoại';
+    const currentCat = formSelectedCategory || (currentProd ? currentProd.category : firstCatName);
     formSelectedCategory = currentCat;
 
     const brandOptions = defaultBrands.map(b => `
       <option value="${b}" ${(currentProd && currentProd.brand === b) ? 'selected' : ''}>${b}</option>
     `).join('');
 
-    const catOptions = categories.map(c => `
-      <option value="${c}" ${(currentCat === c) ? 'selected' : ''}>${c}</option>
-    `).join('');
+    const catOptions = categories.map(c => {
+      const cName = typeof c === 'string' ? c : (c.name || '');
+      return `<option value="${cName}" ${(currentCat === cName) ? 'selected' : ''}>${cName}</option>`;
+    }).join('');
 
     return `
       <div class="pop" style="display: flex; flex-direction: column; gap: 24px;">
@@ -2137,10 +2139,11 @@ function initAdminPortal(options = {}) {
   // --------------------------------------------------------------------------
   window.openCreateProductForm = () => {
     editingProductId = null;
-    const nextData = generateNextProductId();
-    formProductCode = nextData.code;
+    const nextId = generateNextProductId();
+    formProductCode = generateNextProductCode();
     formImageBase64 = '';
-    formSelectedCategory = categories[0] || 'Điện thoại';
+    const firstCatName = categories[0] ? (typeof categories[0] === 'string' ? categories[0] : (categories[0].name || 'Điện thoại')) : 'Điện thoại';
+    formSelectedCategory = firstCatName;
 
     // Khởi tạo 1 dòng biến thể TRỐNG chuẩn hóa theo danh mục
     formVariants = [
@@ -2150,7 +2153,7 @@ function initAdminPortal(options = {}) {
         rom: '',
         cost: 0,
         price: 0,
-        sku: generateVariantSku(formProductCode, '', '', ''),
+        sku: generateSku(formProductCode, '', '', ''),
         stock: 0 // Quy tắc: Mặc định là 0 và bị khóa (Immutable Stock)
       }
     ];
@@ -2166,7 +2169,8 @@ function initAdminPortal(options = {}) {
     editingProductId = id;
     formProductCode = p.code;
     formImageBase64 = p.image || '';
-    formSelectedCategory = p.category || (categories[0] || 'Điện thoại');
+    const firstCatName = categories[0] ? (typeof categories[0] === 'string' ? categories[0] : (categories[0].name || 'Điện thoại')) : 'Điện thoại';
+    formSelectedCategory = p.category || firstCatName;
 
     // Sao chép sâu mảng biến thể khi chỉnh sửa sản phẩm
     formVariants = JSON.parse(JSON.stringify(p.variants || []));
@@ -2178,7 +2182,7 @@ function initAdminPortal(options = {}) {
           rom: '',
           cost: 0,
           price: 0,
-          sku: generateVariantSku(formProductCode, '', '', ''),
+          sku: generateSku(formProductCode, '', '', ''),
           stock: 0
         }
       ];
@@ -2206,7 +2210,7 @@ function initAdminPortal(options = {}) {
     }
 
     // Tự động sinh SKU mới dựa trên các giá trị Màu/RAM/ROM người dùng vừa nhập
-    const sku = generateVariantSku(
+    const sku = generateSku(
       formProductCode,
       formVariants[index].color || '',
       formVariants[index].ram || '',
@@ -2235,7 +2239,7 @@ function initAdminPortal(options = {}) {
       } else if (newCat === 'Đồng hồ thông minh') {
         v.ram = '';
       }
-      v.sku = generateVariantSku(formProductCode, v.color || '', v.ram || '', v.rom || '');
+      v.sku = generateSku(formProductCode, v.color || '', v.ram || '', v.rom || '');
     });
     if (typeof renderDynamicSpecsAndVariants === 'function') {
       renderDynamicSpecsAndVariants(newCat);
@@ -2247,7 +2251,7 @@ function initAdminPortal(options = {}) {
    */
   window.handleAddVariantRow = () => {
     const cat = formSelectedCategory || (document.getElementById('formProdCat') ? document.getElementById('formProdCat').value : 'Điện thoại');
-    const newSku = generateVariantSku(formProductCode, '', '', '');
+    const newSku = generateSku(formProductCode, '', '', '');
 
     formVariants.push({
       color: '',
@@ -2438,10 +2442,11 @@ function initAdminPortal(options = {}) {
           showToast('Đã cập nhật sản phẩm & biến thể thành công!');
         } else {
           // Thêm sản phẩm mới
-          const nextData = generateNextProductId();
+          const nextId = generateNextProductId();
+          const nextCode = generateNextProductCode();
           const newProduct = {
-            id: nextData.id,
-            code: formProductCode || nextData.code,
+            id: nextId,
+            code: formProductCode || nextCode,
             name,
             category: cat,
             brand,
@@ -3000,7 +3005,16 @@ function initAdminPortal(options = {}) {
     render();
   };
 
-  window.handleResetUserPass = (name) => {
+  window.handleResetUserPass = (idOrName, maybeName) => {
+    const id = maybeName ? idOrName : null;
+    const name = maybeName || idOrName;
+    customers = customers.map(c => {
+      if ((id && c.id === id) || (c.name === name)) {
+        return { ...c, password: '123456' };
+      }
+      return c;
+    });
+    saveCustomers(customers);
     userMessage = `Đã reset mật khẩu cho tài khoản "${name}". Mật khẩu tạm thời: 123456`;
     render();
   };

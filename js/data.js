@@ -1701,9 +1701,7 @@ function getCart() {
   // Đọc giỏ riêng của tài khoản đã đăng nhập, còn khách vãng lai dùng khóa chung.
   const user = getCurrentUser();
   const storageKey = user && user.id ? `techno_cart_${user.id}` : 'techno_cart';
-  const fallback = storageKey === 'techno_cart'
-    ? [{ sku: 'SP001-TITAN_DEN-8GB-256GB', productId: 1, qty: 1 }]
-    : [];
+  const fallback = [];
   const raw = getStorage(storageKey, fallback);
   return raw.filter(item => Boolean(findVariantBySku(item.sku)));
 }
@@ -1890,17 +1888,16 @@ function getOrdersForCurrentUser() {
   if (!user) return [];
   const allOrders = getOrders();
   return allOrders.filter(o => {
+    if (user.id && o.customerId && String(user.id) === String(o.customerId)) return true;
+
     const uEmail = (user.email || '').trim().toLowerCase();
     const uPhone = (user.phone || '').replace(/\D/g, '');
-    const uName = (user.name || '').trim().toLowerCase();
 
     const oEmail = (o.customerEmail || '').trim().toLowerCase();
     const oPhone = (o.phone || '').replace(/\D/g, '');
-    const oName = (o.customer || '').trim().toLowerCase();
 
     if (uEmail && oEmail && uEmail === oEmail) return true;
     if (uPhone && oPhone && uPhone === oPhone) return true;
-    if (uName && oName && uName === oName) return true;
     return false;
   });
 }
