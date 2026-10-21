@@ -1,20 +1,5 @@
-/* ==========================================================================
-   Display & Product Card Renderer (Kiến trúc Product Variant Matrix)
-   TechnoStore - Pure Vanilla JavaScript (ES6+)
-   ========================================================================== */
-
 /**
- * Render một thẻ sản phẩm đơn lẻ (Product Card)
- * Nghiệp vụ:
- * 1. Tính toán trực tiếp URL chi tiết sản phẩm
- * 2. Hiển thị mức giá "Từ [basePrice]" cho sản phẩm đa biến thể
- * 3. Hiển thị ảnh thật upload (FileReader) hoặc fallback sang đồ họa SVG Device Art
- * 4. Phân bổ trạng thái tồn kho chuẩn hóa:
- *    - Tồn kho = 0: Gán class .disabled, bôi xám, gắn badge [HẾT HÀNG], chặn nút mua (+)
- *    - Tồn kho thấp (1 - 5 cái): Gắn badge vàng [SẮP HẾT HÀNG], hiển thị "Sắp hết (còn X cái)"
- *    - Tồn kho ổn định (>= 15 cái): Hiển thị bình thường kèm badge MỚI hoặc % Giảm giá
- * 5. Nút mua nhanh (+): Sản phẩm có biến thể chuyển hướng chi tiết, sản phẩm đơn thêm vào giỏ
- * 
+ 
  * @param {Object} p - Thông tin sản phẩm
  * @param {Object} options - { detailUrl, detailUrlPrefix, basePath, isRoot }
  */
@@ -161,8 +146,7 @@ function renderProductGrid(containerId, productList, options = {}) {
   container.innerHTML = activeList.map(p => renderProductCard(p, options)).join('');
 }
 
-/**
- * Xử lý nút hành động trên thẻ sản phẩm: Dấu (+)
+/*
  * Nghiệp vụ:
  * 1. Dùng event.stopPropagation() để không kích hoạt thẻ cha
  * 2. Nếu sản phẩm hết hàng -> Thông báo toast và chặn
