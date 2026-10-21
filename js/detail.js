@@ -1,8 +1,3 @@
-/* ==========================================================================
-   Product Detail Controller (Kiến trúc Product Variant Matrix)
-   TechnoStore - Pure Vanilla JavaScript (ES6+)
-   ========================================================================== */
-
 let currentProduct = null;
 let selectedColor = null;
 let selectedRom = null;
@@ -31,12 +26,13 @@ function initDetailPage() {
     return;
   }
 
-  // Khởi tạo ban đầu: KHÔNG chọn mặc định bất kỳ biến thể nào (null)
+  // Reset lựa chọn để syncVariantSelection khởi tạo biến thể mặc định nếu không cần chọn.
   selectedColor = null;
   selectedRom = null;
   selectedVariant = null;
   selectedQty = 1;
 
+  syncVariantSelection();
   loadProductDetails(currentProduct, allProducts);
 }
 
@@ -76,11 +72,6 @@ function loadProductDetails(p, allProducts) {
   // 3. Tên và Thông tin Meta (Chỉ hiển thị Tên SP và Thương hiệu, xóa hoàn toàn Mã SP và SKU)
   const titleEl = document.getElementById('productTitle');
   if (titleEl) titleEl.textContent = p.name;
-  const metaEl = document.getElementById('productMeta');
-  if (metaEl) {
-    // Đồng bộ điểm đánh giá và lượt bán với thẻ sản phẩm từ cùng một nguồn dữ liệu.
-    metaEl.innerHTML = `Thương hiệu: <b>${p.brand || 'Chính hãng'}</b> · <span style="color:#d97706;">★ ${Number(p.rating ?? 5).toFixed(1)}</span> · Đã bán ${Number(p.sold ?? p.soldCount) || 0}`;
-  }
 
   // 4. Render Ma trận Chips Biến thể (Variant Matrix Chips)
   renderVariantSelectionChips(p);
@@ -99,7 +90,7 @@ function loadProductDetails(p, allProducts) {
   }
 
   // 8. Sản phẩm tương tự (Related Products) - Ẩn hoàn toàn các sản phẩm hết hàng (totalStock === 0)
-  const related = allProducts.filter(x => x.id !== p.id && x.category === p.category && (Number(x.stock) || 0) > 0).slice(0, 3);
+  const related = allProducts.filter(x => x.id !== p.id && x.category === p.category && (Number(x.stock) || 0) > 0).slice(0, 4);
   const relatedGrid = document.getElementById('relatedProductsGrid');
   const relatedSection = document.querySelector('.related-section');
   if (relatedGrid && related.length > 0) {
@@ -114,8 +105,6 @@ function loadProductDetails(p, allProducts) {
 }
 
 /**
- * Tự động quét và gom nhóm RAM/ROM từ mảng variants
- * Lọc ra danh sách RAM/ROM độc lập không trùng lặp và nối bằng dấu gạch ngang (VD: RAM: 12GB - 16GB, ROM: 256GB - 512GB - 1TB)
  * @param {Object} p - Thông tin sản phẩm
  * @returns {{ ramStr: string, romStr: string }}
  */
@@ -143,26 +132,19 @@ function getGroupedSpecs(p) {
   return { ramStr, romStr };
 }
 
-/**
- * Render khu vực chọn phiên bản dưới dạng Nút bấm (Chips/Swatches) chuẩn Shopee / Thế Giới Di Động
- * Cross-validation logic:
- * - Khi chưa chọn gì: Duyệt qua toàn bộ biến thể, Màu nào hoặc RAM/ROM nào có tổng tồn kho = 0 thì bôi xám nút đó (.disabled)
- * - Khi click chọn 1 "Màu sắc": Check xem Màu đó có những RAM/ROM nào. RAM/ROM nào không tồn tại hoặc hết hàng đối với Màu đó -> .disabled
- * - Khi click chọn 1 "RAM/ROM": Check xem RAM/ROM đó có những Màu nào. Màu nào không tồn tại hoặc hết hàng đối với RAM/ROM đó -> .disabled
- * - Với Tai nghe / Phụ kiện chỉ có thuộc tính Màu sắc/Quy cách thì chọn trực tiếp nút đó
- * - Tuyệt đối không append thêm text "(Hết)", chỉ dùng class CSS .disabled.
- */
+function getVariantLists(p) {
+  if (!p || !Array.isArray(p.variants)) return { romList: [], colorList: [] };
+  const romList = Array.from(new Set(p.variants.map(v => v.rom).filter(Boolean).filter(r => r !== 'Tiêu chuẩn')));
+  const colorList = Array.from(new Set(p.variants.map(v => v.color).filter(Boolean).filter(c => c !== 'Tiêu chuẩn')));
+  return { romList, colorList };
+}
+
 function renderVariantSelectionChips(p) {
   const container = document.getElementById('variantSelectorContainer');
   if (!container || !p.variants || p.variants.length === 0) return;
 
   // Lọc danh sách ROM và Màu sắc hợp lệ (loại bỏ null, rỗng và 'Tiêu chuẩn')
-  const romList = Array.from(new Set(
-    p.variants.map(v => v.rom).filter(Boolean).filter(r => r !== 'Tiêu chuẩn')
-  ));
-  const colorList = Array.from(new Set(
-    p.variants.map(v => v.color).filter(Boolean).filter(c => c !== 'Tiêu chuẩn')
-  ));
+  const { romList, colorList } = getVariantLists(p);
 
   const colorMap = {
     'Titan Đen': '#1f2022', 'Titan Trắng': '#f2f3f5', 'Titan Tự Nhiên': '#9b958c',
@@ -306,9 +288,7 @@ function handleSelectRom(rom) {
 function handleSelectColor(color) {
   if (!currentProduct || !currentProduct.variants) return;
 
-  const romList = Array.from(new Set(
-    currentProduct.variants.map(v => v.rom).filter(Boolean).filter(r => r !== 'Tiêu chuẩn')
-  ));
+  const { romList } = getVariantLists(currentProduct);
 
   const isDisabled = (romList.length > 0 && selectedRom)
     ? !currentProduct.variants.some(v => v.color === color && v.rom === selectedRom && (Number(v.stock) || 0) > 0)
@@ -330,17 +310,18 @@ function handleSelectColor(color) {
 function syncVariantSelection() {
   if (!currentProduct || !currentProduct.variants) return;
 
-  const romList = Array.from(new Set(
-    currentProduct.variants.map(v => v.rom).filter(Boolean).filter(r => r !== 'Tiêu chuẩn')
-  ));
-  const colorList = Array.from(new Set(
-    currentProduct.variants.map(v => v.color).filter(Boolean).filter(c => c !== 'Tiêu chuẩn')
-  ));
+  const { romList, colorList } = getVariantLists(currentProduct);
 
   const hasRomOptions = romList.length > 0;
   const hasColorOptions = colorList.length > 0;
 
-  if (hasRomOptions && hasColorOptions) {
+  if (currentProduct.variants.length === 1) {
+    selectedVariant = currentProduct.variants[0] || null;
+    selectedColor = colorList.includes(selectedVariant && selectedVariant.color) ? selectedVariant.color : null;
+    selectedRom = romList.includes(selectedVariant && selectedVariant.rom) ? selectedVariant.rom : null;
+  } else if (!hasRomOptions && !hasColorOptions) {
+    selectedVariant = currentProduct.variants[0] || null;
+  } else if (hasRomOptions && hasColorOptions) {
     if (selectedColor && selectedRom) {
       selectedVariant = currentProduct.variants.find(
         v => v.color === selectedColor && v.rom === selectedRom
@@ -388,8 +369,6 @@ function updateVariantDisplay() {
   const metaEl = document.getElementById('productMeta');
   const badgeContainer = document.getElementById('stockBadgeContainer');
   const stockNoteEl = document.getElementById('maxStockNote');
-  const addBtn = document.getElementById('addToCartBtn');
-  const buyBtn = document.getElementById('buyNowBtn');
 
   // Chỉ hiển thị Thương hiệu (Đã xóa hoàn toàn Mã SP và SKU)
   if (metaEl) {
@@ -400,7 +379,7 @@ function updateVariantDisplay() {
   const allVariants = currentProduct.variants || [];
   const totalStock = allVariants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
 
-  const romList = Array.from(new Set(allVariants.map(v => v.rom).filter(Boolean).filter(r => r !== 'Tiêu chuẩn')));
+  const { romList } = getVariantLists(currentProduct);
   const hasMultipleAttrs = romList.length > 0;
   const selectNotice = hasMultipleAttrs ? 'Vui lòng chọn màu sắc và phiên bản' : 'Vui lòng chọn phân loại sản phẩm';
 
@@ -618,11 +597,7 @@ function updateVariantDisplay() {
   applyOutOfStockState(isOut);
 }
 
-/**
- * Render Bảng thông số kỹ thuật động theo từng danh mục
- * Tự động lọc và CHỈ RENDER NHỮNG DÒNG CÓ DỮ LIỆU THỰC TẾ.
- * Các trường để trống hoặc không thuộc danh mục (như RAM/ROM của Tai nghe/Sạc) tự động không render dòng đó.
- */
+//Render Bảng thông số kỹ thuật động theo từng danh mục
 function renderSpecsTable(p) {
   const container = document.getElementById('specsRowsContainer');
   if (!container || !p) return;
@@ -737,12 +712,7 @@ function selectThumb(el) {
 function validateVariantSelection() {
   if (!currentProduct) return false;
 
-  const romList = Array.from(new Set(
-    (currentProduct.variants || []).map(v => v.rom).filter(Boolean).filter(r => r !== 'Tiêu chuẩn')
-  ));
-  const colorList = Array.from(new Set(
-    (currentProduct.variants || []).map(v => v.color).filter(Boolean).filter(c => c !== 'Tiêu chuẩn')
-  ));
+  const { romList, colorList } = getVariantLists(currentProduct);
 
   const hasRomOptions = romList.length > 0;
   const hasColorOptions = colorList.length > 0;
