@@ -100,8 +100,8 @@ function renderStoreHeader(containerId, options = {}) {
         <!-- Liên kết điều hướng chính (tự động lọc các danh mục đang hoạt động) -->
         <nav class="store-nav">
           ${(typeof getActiveCategories === 'function' ? getActiveCategories() : ['Điện thoại', 'Máy tính bảng', 'Tai nghe', 'Đồng hồ thông minh', 'Phụ kiện'])
-            .slice(0, 4)
-            .map(c => `
+      .slice(0, 4)
+      .map(c => `
               <a href="${homeUrl}?cat=${encodeURIComponent(c)}" class="nav-link ${options.activeCategory === c ? 'active' : ''}">${c}</a>
             `).join('')}
           <a href="${user ? customerPath + 'history.html' : customerPath + 'login.html'}" class="nav-link ${options.activePage === 'orders' ? 'active' : ''}">Đơn hàng</a>
@@ -123,11 +123,11 @@ function renderStoreHeader(containerId, options = {}) {
         </div>
 
         <!-- Thao tác tài khoản và giỏ hàng -->
-        <div class="header-actions">
-          <a href="${user ? customerPath + 'profile.html' : customerPath + 'login.html'}" class="user-btn">
-            <img src="${iconPath}con-nguoi.svg" class="icon icon-18" alt="Tài khoản" />
-            <span>${user ? (user.name || 'Minh Anh') : 'Đăng nhập'}</span>
-          </a>
+<div class="header-actions">
+  <a href="${user ? customerPath + 'profile.html' : customerPath + 'login.html'}" class="user-btn">
+    <img src="${iconPath}con-nguoi.svg" class="icon icon-18" alt="Tài khoản" />
+    <span>${user ? (user.name || user.fullName || user.username || 'Tài khoản') : 'Đăng nhập'}</span>
+  </a>
 
           <a href="${customerPath}cart.html" class="cart-btn" aria-label="Giỏ hàng">
             <img src="${iconPath}gio-hang.svg" class="icon icon-20" alt="Giỏ hàng" />
