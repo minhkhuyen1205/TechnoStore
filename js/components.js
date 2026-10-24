@@ -290,7 +290,7 @@ function renderBrandCheckboxes(containerId = 'brandCheckboxList') {
     : [];
 
   if (typeof getProducts === 'function') {
-    const activeProds = getProducts().filter(p => !p.isDeleted);
+    const activeProds = getActiveProducts();
     const prodBrands = Array.from(new Set(activeProds.map(p => p.brand).filter(Boolean)));
     prodBrands.forEach(b => {
       if (!brands.includes(b)) brands.push(b);
