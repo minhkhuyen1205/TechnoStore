@@ -13,6 +13,7 @@ function initCartPage(options = {}) {
   const basePath = options.basePath || '';
   const customerPath = `${basePath}view/customer/`;
   const homeUrl = options.isRoot ? 'index.html' : `${basePath}index.html`;
+  const selectedSkus = new Set(getCart().map(item => item.sku));
 
   /**
    * ĐỒNG BỘ TỒN KHO THỰC TẾ VỚI GIỎ HÀNG KHÁCH HÀNG (REAL-TIME INVENTORY RECONCILIATION)
@@ -25,7 +26,7 @@ function initCartPage(options = {}) {
 
     rawCart.forEach(item => {
       const found = findVariantBySku(item.sku);
-      if (!found) {
+      if (!found || found.product.isDeleted || !found.product.isVisible) {
         hasAdjustment = true;
         adjustmentMessages.push(`• Sản phẩm (SKU: ${item.sku}) không còn tồn tại đã được xóa khỏi giỏ.`);
         return;
@@ -67,7 +68,7 @@ function initCartPage(options = {}) {
     const items = [];
     rawCart.forEach(item => {
       const found = findVariantBySku(item.sku);
-      if (found) {
+      if (found && !found.product.isDeleted && found.product.isVisible) {
         items.push({
           sku: item.sku,
           qty: item.qty,
@@ -93,12 +94,20 @@ function initCartPage(options = {}) {
       return;
     }
 
-    const subtotal = items.reduce((sum, item) => sum + (item.variant.price * item.qty), 0);
-    const shipping = subtotal > 2000000 ? 0 : 30000;
-    const total = subtotal + shipping;
+    const selectedItems = items.filter(item => selectedSkus.has(item.sku));
+    const subtotal = selectedItems.reduce((sum, item) => sum + (item.variant.price * item.qty), 0);
+    const shipping = selectedItems.length > 0 && subtotal <= 2000000 ? 30000 : 0;
+    const total = selectedItems.length > 0 ? subtotal + shipping : 0;
 
     const itemsHtml = items.map(item => `
       <div class="cart-item-card">
+        <input
+          class="cart-item-checkbox"
+          type="checkbox"
+          aria-label="Chọn ${item.product.name}"
+          ${selectedSkus.has(item.sku) ? 'checked' : ''}
+          onchange="handleToggleCartSelection('${item.sku}', this.checked)"
+        />
         <div class="cart-item-thumb" style="display: grid; place-items: center; overflow: hidden;">
           ${item.product.image
         ? `<img src="${item.product.image}" style="max-height: 76px; max-width: 100%; object-fit: contain;" alt="${item.product.name}" />`
@@ -163,7 +172,7 @@ function initCartPage(options = {}) {
             <h2 class="summary-title">Tóm tắt đơn hàng</h2>
             <div class="summary-rows-list">
               <div class="summary-row">
-                <span class="summary-row-label">Tạm tính (${items.reduce((s, i) => s + i.qty, 0)} sản phẩm)</span>
+                <span class="summary-row-label">Tạm tính (${selectedItems.reduce((s, i) => s + i.qty, 0)} sản phẩm)</span>
                 <span class="summary-row-val">${vnd(subtotal)}</span>
               </div>
               <div class="summary-row">
@@ -176,7 +185,7 @@ function initCartPage(options = {}) {
               </div>
             </div>
 
-            <button onclick="handleProceedToCheckout()" class="btn btn-primary btn-lg btn-full" style="margin-top: 20px;">
+            <button onclick="handleProceedToCheckout()" class="btn btn-primary btn-lg btn-full" style="margin-top: 20px;" ${selectedItems.length === 0 ? 'disabled' : ''}>
               Tiến hành thanh toán
             </button>
             <a href="${homeUrl}" class="btn btn-ghost btn-md btn-full" style="margin-top: 8px;">
@@ -189,6 +198,21 @@ function initCartPage(options = {}) {
   }
 
   window.handleUpdateCartQty = (sku, newQty) => {
+    if (newQty <= 0) {
+      showCustomDialog(
+        'Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?',
+        'Xác nhận xóa',
+        'warning',
+        () => {
+          removeFromCart(sku);
+          selectedSkus.delete(sku);
+          render();
+        },
+        { confirmText: 'Xác nhận xóa', cancelText: 'Hủy' }
+      );
+      return;
+    }
+
     const found = findVariantBySku(sku);
     if (found && newQty > found.variant.stock) {
       showToast(`Kho chỉ còn ${found.variant.stock} sản phẩm cho phiên bản này!`);
@@ -198,10 +222,25 @@ function initCartPage(options = {}) {
     render();
   };
 
-  window.handleRemoveCartItem = (sku) => {
-    removeFromCart(sku);
+  window.handleToggleCartSelection = (sku, checked) => {
+    if (checked) selectedSkus.add(sku);
+    else selectedSkus.delete(sku);
     render();
-    showToast('Đã xoá phiên bản sản phẩm khỏi giỏ hàng');
+  };
+
+  window.handleRemoveCartItem = (sku) => {
+    // Hiển thị dialog xác nhận xoá trước khi thực hiện
+    showCustomDialog(
+      'Bạn có chắc muốn xoá sản phẩm này khỏi giỏ hàng?',
+      'Xác nhận xoá',
+      'warning',
+      () => {
+        removeFromCart(sku);
+        selectedSkus.delete(sku);
+        render();
+        showToast('Đã xoá phiên bản sản phẩm khỏi giỏ hàng');
+      }
+    );
   };
 
   window.handleProceedToCheckout = () => {
@@ -210,6 +249,19 @@ function initCartPage(options = {}) {
       clearBuyNow();
     } else {
       localStorage.removeItem('techno_buy_now');
+    }
+
+    if (selectedSkus.size === 0) {
+      showCustomDialog('Vui lòng chọn ít nhất một sản phẩm để thanh toán.', 'Chưa chọn sản phẩm', 'warning');
+      return;
+    }
+
+    try {
+      sessionStorage.setItem('techno_checkout_skus', JSON.stringify(Array.from(selectedSkus)));
+    } catch (error) {
+      console.error('[Checkout] Không thể lưu danh sách sản phẩm đã chọn:', error);
+      showCustomDialog('Không thể chuẩn bị danh sách thanh toán. Vui lòng thử lại.', 'Lỗi thanh toán', 'error');
+      return;
     }
 
     const user = getCurrentUser();
@@ -250,6 +302,23 @@ function initCheckoutPage(options = {}) {
   // 2. Xác định luồng thanh toán: 'Mua ngay' (Buy Now) hay 'Giỏ hàng' (Cart)
   const buyNowData = typeof getBuyNow === 'function' ? getBuyNow() : getStorage('techno_buy_now', null);
   const isBuyNowMode = Boolean(buyNowData && buyNowData.sku);
+  let checkoutSkus = null;
+  if (!isBuyNowMode) {
+    try {
+      const storedSkus = sessionStorage.getItem('techno_checkout_skus');
+      if (storedSkus !== null) {
+        const parsedSkus = JSON.parse(storedSkus);
+        if (!Array.isArray(parsedSkus) || parsedSkus.some(sku => typeof sku !== 'string')) {
+          throw new Error('Danh sách SKU thanh toán không hợp lệ.');
+        }
+        checkoutSkus = new Set(parsedSkus);
+      }
+    } catch (error) {
+      console.error('[Checkout] Không thể đọc danh sách sản phẩm đã chọn:', error);
+      showCustomDialog('Không thể tải danh sách sản phẩm thanh toán. Vui lòng quay lại giỏ hàng.', 'Lỗi thanh toán', 'error');
+      return;
+    }
+  }
 
   let selectedAddressId = null;
   let selectedPayment = 'cod';
@@ -301,7 +370,7 @@ function initCheckoutPage(options = {}) {
     if (isBuyNowMode) {
       // Luồng Mua ngay: CHỈ hiển thị duy nhất 1 sản phẩm nằm trong dữ liệu Mua ngay tạm
       const found = findVariantBySku(buyNowData.sku);
-      if (found) {
+      if (found && !found.product.isDeleted && found.product.isVisible) {
         items = [{
           sku: buyNowData.sku,
           qty: buyNowData.qty || 1,
@@ -312,9 +381,11 @@ function initCheckoutPage(options = {}) {
     } else {
       // Luồng Giỏ hàng: Hiển thị danh sách các sản phẩm trong giỏ hàng chính
       const rawCart = getCart();
+      if (checkoutSkus === null) checkoutSkus = new Set(rawCart.map(item => item.sku));
       rawCart.forEach(item => {
+        if (!checkoutSkus.has(item.sku)) return;
         const found = findVariantBySku(item.sku);
-        if (found) {
+        if (found && !found.product.isDeleted && found.product.isVisible) {
           items.push({
             sku: item.sku,
             qty: item.qty,
@@ -698,9 +769,11 @@ function initCheckoutPage(options = {}) {
         showCustomDialog('Giỏ hàng trống!', 'Thông báo', 'warning');
         return;
       }
+      if (checkoutSkus === null) checkoutSkus = new Set(rawCart.map(item => item.sku));
       rawCart.forEach(item => {
+        if (!checkoutSkus.has(item.sku)) return;
         const found = findVariantBySku(item.sku);
-        if (found) {
+        if (found && !found.product.isDeleted && found.product.isVisible) {
           checkoutItems.push({
             sku: item.sku,
             qty: item.qty,
@@ -717,13 +790,12 @@ function initCheckoutPage(options = {}) {
     }
 
     // 3. Kiểm tra tồn kho thời gian thực
-    const allProducts = getProducts();
     const orderItems = [];
     let subtotal = 0;
 
     for (const item of checkoutItems) {
       const found = findVariantBySku(item.sku);
-      if (!found) {
+      if (!found || found.product.isDeleted || !found.product.isVisible) {
         showCustomDialog(`Biến thể sản phẩm (SKU: ${item.sku}) không còn tồn tại trong hệ thống!`, 'Lỗi sản phẩm', 'error');
         return;
       }
@@ -744,70 +816,60 @@ function initCheckoutPage(options = {}) {
     }
 
     const ship = subtotal > 2000000 ? 0 : 30000;
-    const orderId = generateNextOrderId();
-
-    // 4. TỰ ĐỘNG TRỪ TỒN KHO CỦA TỪNG SKU
-    checkoutItems.forEach(item => {
-      allProducts.forEach(p => {
-        if (p.variants) {
-          const v = p.variants.find(x => x.sku === item.sku);
-          if (v) {
-            v.stock = Math.max(0, (v.stock || 0) - item.qty);
-            p.sold = (p.sold || 0) + item.qty;
-            p.stock = p.variants.reduce((sum, cur) => sum + (cur.stock || 0), 0);
-          }
+    showCustomDialog(
+      `Bạn xác nhận đặt đơn hàng với tổng thanh toán ${vnd(subtotal + ship)}?`,
+      'Xác nhận đặt hàng',
+      'warning',
+      () => {
+        const inventoryResult = applyOrderInventory(orderItems, 1, true);
+        if (!inventoryResult.success) {
+          showCustomDialog(inventoryResult.message, 'Không thể đặt hàng', 'warning');
+          return;
         }
-      });
-    });
 
-    saveProducts(allProducts);
+        const orderId = generateNextOrderId();
+        const paymentLabelMap = {
+          cod: 'Tiền mặt (COD)',
+          bank: 'Chuyển khoản (VietQR)',
+          card: 'Thẻ tín dụng'
+        };
+        const newOrder = {
+          id: orderId,
+          customerId: customer.id || currentUser.id || '',
+          customer: activeAddress.receiverName || customer.name,
+          customerEmail: customer.email || '',
+          phone: activeAddress.receiverPhone || customer.phone || '',
+          address: `${activeAddress.detail} (${activeAddress.label || 'Địa chỉ nhận hàng'})`,
+          date: typeof formatCurrentDate === 'function' ? formatCurrentDate() : new Date().toLocaleDateString('vi-VN'),
+          total: subtotal + ship,
+          shippingFee: ship,
+          status: 'Mới đặt',
+          pay: paymentLabelMap[selectedPayment] || 'Tiền mặt',
+          items: orderItems
+        };
 
-    // 5. Tạo đơn hàng mới chuẩn hóa thông tin
-    const paymentLabelMap = {
-      'cod': 'Tiền mặt (COD)',
-      'bank': 'Chuyển khoản (VietQR)',
-      'card': 'Thẻ tín dụng'
-    };
+        const orders = getOrders();
+        orders.unshift(newOrder);
+        saveOrders(orders);
+        if (typeof syncCustomerOrderCounts === 'function') {
+          syncCustomerOrderCounts(orders);
+        }
 
-    const newOrder = {
-      id: orderId,
-      customerId: customer.id || currentUser.id || '',
-      customer: activeAddress.receiverName || customer.name,
-      customerEmail: customer.email || '',
-      phone: activeAddress.receiverPhone || customer.phone || '',
-      address: `${activeAddress.detail} (${activeAddress.label || 'Địa chỉ nhận hàng'})`,
-      date: typeof formatCurrentDate === 'function' ? formatCurrentDate() : new Date().toLocaleDateString('vi-VN'),
-      total: subtotal + ship,
-      shippingFee: ship,
-      status: 'Mới đặt',
-      pay: paymentLabelMap[selectedPayment] || 'Tiền mặt',
-      items: orderItems
-    };
+        if (isBuyNowMode) {
+          if (typeof clearBuyNow === 'function') clearBuyNow();
+          else localStorage.removeItem('techno_buy_now');
+        } else {
+          const selectedSkuSet = new Set(orderItems.map(item => item.sku));
+          saveCart(getCart().filter(item => !selectedSkuSet.has(item.sku)));
+          sessionStorage.removeItem('techno_checkout_skus');
+        }
 
-    const orders = getOrders();
-    orders.unshift(newOrder);
-    saveOrders(orders);
-    // Cập nhật số đơn của khách hàng ngay sau khi lưu đơn checkout mới.
-    if (typeof syncCustomerOrderCounts === 'function') {
-      syncCustomerOrderCounts(orders);
-    }
-
-    // 6. Xử lý sau khi đặt hàng thành công theo đúng luồng:
-    if (isBuyNowMode) {
-      // Luồng 'Mua ngay': CHỈ xóa dữ liệu Mua ngay tạm, giữ nguyên giỏ hàng chính
-      if (typeof clearBuyNow === 'function') {
-        clearBuyNow();
-      } else {
-        localStorage.removeItem('techno_buy_now');
-      }
-    } else {
-      // Luồng 'Giỏ hàng': Xóa các sản phẩm đã thanh toán khỏi giỏ hàng
-      clearCart();
-    }
-
-    completedOrder = newOrder;
-    render();
-    showToast(`Đã hoàn tất đặt đơn hàng #${orderId}!`);
+        completedOrder = newOrder;
+        render();
+        showToast(`Đã hoàn tất đặt đơn hàng #${orderId}!`);
+      },
+      { confirmText: 'Xác nhận đặt hàng', cancelText: 'Tiếp tục mua sắm' }
+    );
   };
 
   // Mở đúng đơn hàng vừa đặt trong lịch sử tài khoản, không điều hướng tới danh sách chung.
