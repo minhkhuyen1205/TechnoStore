@@ -13,7 +13,7 @@ function initDetailPage() {
   const urlParams = new URLSearchParams(window.location.search);
   const rawId = urlParams.get('id') || '1';
 
-  const allProducts = getProducts().filter(p => !p.isDeleted);
+  const allProducts = getActiveProducts();
   currentProduct = allProducts.find(p => String(p.id) === rawId || p.code === rawId) || allProducts[0];
 
   if (!currentProduct) {
