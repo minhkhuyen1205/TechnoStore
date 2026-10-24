@@ -4,7 +4,7 @@ const ITEMS_PER_PAGE = 6;
 class FilterController {
   constructor(options = {}) {
     this.options = options;
-    this.allProducts = getProducts().filter(p => !p.isDeleted);
+    this.allProducts = getActiveProducts();
 
     this.category = options.category || 'Tất cả';
     this.brands = options.brands || [];
