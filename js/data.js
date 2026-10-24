@@ -78,7 +78,7 @@ const defaultProducts = [
     ],
     "rating": 4.9,
     "isNew": true,
-    "imported": 60,
+    "imported": 68,
     "sold": 36,
     "variants": [
       {
@@ -146,7 +146,7 @@ const defaultProducts = [
     ],
     "rating": 4.7,
     "isNew": true,
-    "imported": 80,
+    "imported": 69,
     "sold": 39,
     "variants": [
       {
@@ -205,7 +205,7 @@ const defaultProducts = [
     ],
     "rating": 4.8,
     "isNew": true,
-    "imported": 40,
+    "imported": 59,
     "sold": 32,
     "variants": [
       {
@@ -263,7 +263,7 @@ const defaultProducts = [
       "#5d8aa8"
     ],
     "rating": 4.8,
-    "imported": 50,
+    "imported": 49,
     "sold": 28,
     "variants": [
       {
@@ -322,7 +322,7 @@ const defaultProducts = [
     ],
     "rating": 4.9,
     "isNew": true,
-    "imported": 45,
+    "imported": 42,
     "sold": 22,
     "variants": [
       {
@@ -372,7 +372,7 @@ const defaultProducts = [
     ],
     "rating": 4.8,
     "isNew": true,
-    "imported": 35,
+    "imported": 19,
     "sold": 16,
     "variants": [
       {
@@ -421,7 +421,7 @@ const defaultProducts = [
       "#1a1a1a"
     ],
     "rating": 4.7,
-    "imported": 30,
+    "imported": 19,
     "sold": 15,
     "variants": [
       {
@@ -470,7 +470,7 @@ const defaultProducts = [
       "#00695c"
     ],
     "rating": 4.6,
-    "imported": 40,
+    "imported": 44,
     "sold": 22,
     "variants": [
       {
@@ -520,7 +520,7 @@ const defaultProducts = [
     ],
     "rating": 4.9,
     "isNew": true,
-    "imported": 25,
+    "imported": 16,
     "sold": 13,
     "variants": [
       {
@@ -570,7 +570,7 @@ const defaultProducts = [
     ],
     "rating": 4.9,
     "isNew": true,
-    "imported": 40,
+    "imported": 36,
     "sold": 18,
     "variants": [
       {
@@ -619,7 +619,7 @@ const defaultProducts = [
       "#64b5f6"
     ],
     "rating": 4.8,
-    "imported": 50,
+    "imported": 58,
     "sold": 26,
     "variants": [
       {
@@ -677,7 +677,7 @@ const defaultProducts = [
       "#e5e7eb"
     ],
     "rating": 4.8,
-    "imported": 35,
+    "imported": 22,
     "sold": 18,
     "variants": [
       {
@@ -726,7 +726,7 @@ const defaultProducts = [
       "#80deea"
     ],
     "rating": 4.7,
-    "imported": 50,
+    "imported": 55,
     "sold": 30,
     "variants": [
       {
@@ -772,7 +772,7 @@ const defaultProducts = [
       "#e0e0e0"
     ],
     "rating": 4.9,
-    "imported": 80,
+    "imported": 45,
     "sold": 45,
     "variants": [
       {
@@ -856,7 +856,7 @@ const defaultProducts = [
       "#e0e0e0"
     ],
     "rating": 4.9,
-    "imported": 40,
+    "imported": 20,
     "sold": 20,
     "variants": [
       {
@@ -904,7 +904,7 @@ const defaultProducts = [
     ],
     "rating": 4.8,
     "isNew": true,
-    "imported": 50,
+    "imported": 37,
     "sold": 32,
     "variants": [
       {
@@ -951,7 +951,7 @@ const defaultProducts = [
       "#e0dcd3"
     ],
     "rating": 4.7,
-    "imported": 40,
+    "imported": 21,
     "sold": 21,
     "variants": [
       {
@@ -996,7 +996,7 @@ const defaultProducts = [
       "#e0e0e0"
     ],
     "rating": 4.8,
-    "imported": 100,
+    "imported": 110,
     "sold": 65,
     "variants": [
       {
@@ -1041,7 +1041,7 @@ const defaultProducts = [
       "#e0e0e0"
     ],
     "rating": 4.9,
-    "imported": 90,
+    "imported": 100,
     "sold": 55,
     "variants": [
       {
@@ -1112,6 +1112,7 @@ const defaultOrders = [
     customerEmail: 'minhanh@mail.com',
     phone: '0901234567',
     date: '25/09/2026',
+    receivedDate: '27/09/2026',
     total: 18990000,
     status: 'Đã giao',
     pay: 'Tiền mặt',
@@ -1155,6 +1156,7 @@ const defaultOrders = [
     customerEmail: 'duclong@mail.com',
     phone: '0944567890',
     date: '30/09/2026',
+    receivedDate: '02/10/2026',
     total: 18990000,
     status: 'Đã giao',
     pay: 'Tiền mặt',
@@ -1169,6 +1171,7 @@ const defaultOrders = [
     customerEmail: 'thanhtam@mail.com',
     phone: '0977678901',
     date: '29/09/2026',
+    receivedDate: '01/10/2026',
     total: 33490000,
     status: 'Đã giao',
     pay: 'Chuyển khoản',
@@ -1197,6 +1200,7 @@ const defaultOrders = [
     customerEmail: 'khanhlinh@mail.com',
     phone: '0966554433',
     date: '27/09/2026',
+    receivedDate: '29/09/2026',
     total: 28990000,
     status: 'Đã giao',
     pay: 'Chuyển khoản',
@@ -1323,7 +1327,7 @@ const defaultReceipts = [
     date: '28/09/2026',
     lines: 3,
     qty: 65,
-    total: 1862000000,
+    total: 1369000000,
     status: 'Hoàn thành',
     items: [
       { sku: 'SP001-TITAN_DEN-8GB-256GB', name: 'iPhone 16 Pro Max - Titan Đen 256GB', cost: 30200000, qty: 25 },
@@ -1348,7 +1352,7 @@ const defaultReceipts = [
     date: '11/09/2026',
     lines: 2,
     qty: 80,
-    total: 508000000,
+    total: 235000000,
     status: 'Hoàn thành',
     items: [
       { sku: 'SP019-TRANG_1M', name: 'Sạc nhanh MagSafe 25W - 1m', cost: 850000, qty: 60 },
@@ -1360,7 +1364,7 @@ const defaultReceipts = [
     date: '03/10/2026',
     lines: 2,
     qty: 30,
-    total: 474500000,
+    total: 570000000,
     status: 'Nháp',
     items: [
       { sku: 'SP004-XANH_MAYA-12GB-256GB', name: 'Galaxy Z Flip6 - Xanh Maya 256GB', cost: 18500000, qty: 15 },
@@ -1399,6 +1403,7 @@ function setStorage(key, val) {
 function normalizeProduct(p) {
   if (!p) return null;
   p.isDeleted = Boolean(p.isDeleted);
+  p.isVisible = p.isVisible !== false;
   p.attributes = Array.isArray(p.attributes) ? p.attributes : ['Màu sắc', 'RAM', 'ROM'];
 
   if (!Array.isArray(p.variants) || p.variants.length === 0) {
@@ -1434,9 +1439,36 @@ function normalizeProduct(p) {
     : (Number(p.cost ?? p.costPrice ?? p.importPrice) || 0);
   p.costPrice = p.cost; // Đảm bảo trường costPrice luôn sẵn sàng cho quản trị
   p.importPrice = p.cost;
-  p.stock = p.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
   p.rating = Number(p.rating ?? 5);
-  p.sold = Number(p.sold ?? p.soldCount ?? 0);
+  const productSold = Math.max(0, Math.floor(Number(p.sold ?? p.soldCount ?? 0) || 0));
+  const existingVariantSold = p.variants.map(v => Number(v.sold));
+  const hasConsistentVariantSales = existingVariantSold.every(Number.isFinite) &&
+    existingVariantSold.reduce((sum, value) => sum + value, 0) === productSold;
+
+  if (!hasConsistentVariantSales) {
+    const totalVariantStock = p.variants.reduce((sum, v) => sum + v.stock, 0);
+    let remainingSold = productSold;
+    p.variants.forEach((v, index) => {
+      const share = index === p.variants.length - 1
+        ? remainingSold
+        : totalVariantStock > 0
+          ? Math.floor(productSold * v.stock / totalVariantStock)
+          : Math.floor(productSold / p.variants.length);
+      v.sold = share;
+      remainingSold -= share;
+    });
+  } else {
+    p.variants.forEach((v, index) => {
+      v.sold = Math.max(0, Math.floor(existingVariantSold[index]));
+    });
+  }
+
+  p.variants.forEach(v => {
+    v.imported = v.stock + v.sold;
+  });
+  p.stock = p.variants.reduce((sum, v) => sum + v.stock, 0);
+  p.imported = p.variants.reduce((sum, v) => sum + v.imported, 0);
+  p.sold = p.variants.reduce((sum, v) => sum + v.sold, 0);
   p.soldCount = p.sold;
 
   return p;
@@ -1504,6 +1536,121 @@ function initDefaultData(forceReset = false) {
         ]);
       }
     }
+
+    if (localStorage.getItem('techno_inventory_schema') !== 'sku_v1') {
+      const products = getStorage('techno_products', defaultProducts).map(normalizeProduct);
+      const orders = getStorage('techno_orders', defaultOrders);
+      const orderedBySku = new Map();
+
+      orders.forEach(order => {
+        if (order.status === 'Đã huỷ' || order.status === 'Đã hủy') return;
+        (order.items || []).forEach(item => {
+          if (!item.sku) return;
+          orderedBySku.set(item.sku, (orderedBySku.get(item.sku) || 0) + (Number(item.qty) || 0));
+        });
+      });
+
+      products.forEach(product => {
+        const orderedQty = product.variants.reduce((sum, variant) => sum + (orderedBySku.get(variant.sku) || 0), 0);
+        const totalSold = Math.max(product.sold, orderedQty);
+        let remainingSold = totalSold - orderedQty;
+        const totalStock = product.variants.reduce((sum, variant) => sum + variant.stock, 0);
+
+        product.variants.forEach((variant, index) => {
+          const orderSold = orderedBySku.get(variant.sku) || 0;
+          const extraSold = index === product.variants.length - 1
+            ? remainingSold
+            : totalStock > 0
+              ? Math.floor((totalSold - orderedQty) * variant.stock / totalStock)
+              : Math.floor((totalSold - orderedQty) / product.variants.length);
+          variant.sold = orderSold + extraSold;
+          remainingSold -= extraSold;
+          variant.imported = variant.stock + variant.sold;
+        });
+
+        product.sold = product.variants.reduce((sum, variant) => sum + variant.sold, 0);
+        product.soldCount = product.sold;
+        product.imported = product.variants.reduce((sum, variant) => sum + variant.imported, 0);
+      });
+
+      const receipts = getStorage('techno_receipts', defaultReceipts);
+      const receivedBySku = new Map();
+      receipts.filter(receipt => receipt.status === 'Hoàn thành').forEach(receipt => {
+        (receipt.items || []).forEach(item => {
+          receivedBySku.set(item.sku, (receivedBySku.get(item.sku) || 0) + (Number(item.qty) || 0));
+        });
+      });
+      const openingItems = [];
+      products.forEach(product => product.variants.forEach(variant => {
+        const openingQty = variant.imported - (receivedBySku.get(variant.sku) || 0);
+        if (openingQty < 0) {
+          console.error(`[TechnoStore] Phiếu nhập vượt tổng nhập của SKU ${variant.sku}.`);
+          return;
+        }
+        if (openingQty > 0) {
+          openingItems.push({
+            sku: variant.sku,
+            name: `${product.name} - ${variant.color}`,
+            cost: Number(variant.cost) || 0,
+            qty: openingQty
+          });
+        }
+      }));
+      if (openingItems.length > 0 && !receipts.some(receipt => receipt.id === 'PN0000')) {
+        const openingQty = openingItems.reduce((sum, item) => sum + item.qty, 0);
+        receipts.push({
+          id: 'PN0000',
+          date: '01/09/2026',
+          lines: openingItems.length,
+          qty: openingQty,
+          total: openingItems.reduce((sum, item) => sum + item.qty * item.cost, 0),
+          status: 'Hoàn thành',
+          items: openingItems,
+          source: 'opening-balance'
+        });
+        setStorage('techno_receipts', receipts);
+      }
+      setStorage('techno_products', products);
+      localStorage.setItem('techno_inventory_schema', 'sku_v1');
+    }
+
+    if (localStorage.getItem('techno_receipt_totals_schema') !== 'receipt_totals_v1') {
+      const receipts = getStorage('techno_receipts', defaultReceipts);
+      let hasChanges = false;
+      receipts.forEach(receipt => {
+        if (!Array.isArray(receipt.items)) return;
+        const total = receipt.items.reduce((sum, item) =>
+          sum + (Number(item.cost) || 0) * (Number(item.qty) || 0), 0);
+        const qty = receipt.items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+        if (receipt.total !== total || receipt.qty !== qty || receipt.lines !== receipt.items.length) {
+          receipt.total = total;
+          receipt.qty = qty;
+          receipt.lines = receipt.items.length;
+          hasChanges = true;
+        }
+      });
+      if (hasChanges) setStorage('techno_receipts', receipts);
+      localStorage.setItem('techno_receipt_totals_schema', 'receipt_totals_v1');
+    }
+
+    if (localStorage.getItem('techno_order_received_dates_schema') !== 'received_dates_v1') {
+      const orders = getStorage('techno_orders', defaultOrders);
+      let hasChanges = false;
+      orders.forEach(order => {
+        if (order.status === 'Đã giao' && !order.receivedDate) {
+          const fixtureOrder = defaultOrders.find(fixture => fixture.id === order.id);
+          if (fixtureOrder && fixtureOrder.receivedDate) {
+            order.receivedDate = fixtureOrder.receivedDate;
+            hasChanges = true;
+          }
+        } else if (order.status !== 'Đã giao' && order.receivedDate) {
+          delete order.receivedDate;
+          hasChanges = true;
+        }
+      });
+      if (hasChanges) setStorage('techno_orders', orders);
+      localStorage.setItem('techno_order_received_dates_schema', 'received_dates_v1');
+    }
   } catch (e) {
     console.error('[TechnoStore] Lỗi initDefaultData:', e);
   }
@@ -1525,7 +1672,7 @@ function saveProducts(data) {
  * Lấy danh sách sản phẩm hiển thị phía Khách hàng (bỏ các sp đã bị Xóa mềm)
  */
 function getActiveProducts() {
-  return getProducts().filter(p => !p.isDeleted);
+  return getProducts().filter(p => !p.isDeleted && p.isVisible);
 }
 
 // Getters và Setters cho Orders, Customers, Receipts, Categories
@@ -1741,7 +1888,7 @@ function addToCart(skuOrId, qty = 1) {
   let targetVariant = null;
 
   if (typeof skuOrId === 'number') {
-    const prod = getProducts().find(p => p.id === skuOrId && !p.isDeleted);
+    const prod = getProducts().find(p => p.id === skuOrId && !p.isDeleted && p.isVisible);
     if (!prod) return { success: false, message: 'Không tìm thấy sản phẩm!' };
     const v = prod.variants.find(x => x.stock > 0) || prod.variants[0];
     if (!v) return { success: false, message: 'Sản phẩm này chưa có phiên bản khả dụng!' };
@@ -1753,6 +1900,10 @@ function addToCart(skuOrId, qty = 1) {
     if (!found) return { success: false, message: 'Phiên bản sản phẩm không tồn tại!' };
     targetProduct = found.product;
     targetVariant = found.variant;
+  }
+
+  if (!targetProduct.isVisible || targetProduct.isDeleted) {
+    return { success: false, message: 'Sản phẩm hiện không còn được kinh doanh.' };
   }
 
   if (targetVariant.stock <= 0) {
@@ -1832,7 +1983,7 @@ function setCurrentUser(user) {
       const mergedCart = Array.isArray(personalCart) ? personalCart : [];
       guestCart.forEach(item => {
         const found = findVariantBySku(item.sku);
-        if (!found) return;
+        if (!found || !found.product.isVisible || found.product.isDeleted) return;
         const stock = Number(found.variant.stock) || 0;
         if (stock <= 0) return;
         const existing = mergedCart.find(cartItem => cartItem.sku === item.sku);
@@ -1906,31 +2057,51 @@ function getOrdersForCurrentUser() {
 // 9. CÁC HÀM TIỆN ÍCH BỔ SUNG
 // ==========================================================================
 
-/**
- * Cộng / Trừ tồn kho cho một biến thể theo SKU.
- * Dùng khi hủy đơn hàng (cộng +qty) hoặc phục hồi đơn (trừ -qty).
- * @param {string} sku  - Mã SKU biến thể
- * @param {number} delta - Số lượng thay đổi (dương = cộng, âm = trừ)
- */
-function updateVariantStock(sku, delta) {
-  if (!sku || !delta) return;
-  const allProds = getProducts();
-  let changed = false;
-  allProds.forEach(p => {
-    if (Array.isArray(p.variants)) {
-      const v = p.variants.find(x => x.sku === sku);
-      if (v) {
-        // Đảm bảo tồn kho không âm
-        v.stock = Math.max(0, (Number(v.stock) || 0) + delta);
-        // Cập nhật lại trường stock tổng hợp của sản phẩm cha
-        p.stock = p.variants.reduce((sum, vv) => sum + (Number(vv.stock) || 0), 0);
-        changed = true;
-      }
-    }
-  });
-  if (changed) {
-    saveProducts(allProds);
+function applyOrderInventory(items, direction, requireVisible = false) {
+  if (!Array.isArray(items) || ![1, -1].includes(direction)) {
+    return { success: false, message: 'Dữ liệu cập nhật tồn kho không hợp lệ.' };
   }
+
+  const products = getProducts();
+  const quantitiesBySku = new Map();
+  for (const item of items) {
+    const quantity = Number(item.qty);
+    if (!item.sku || !Number.isSafeInteger(quantity) || quantity <= 0) {
+      return { success: false, message: `Không tìm thấy SKU hợp lệ "${item.sku || ''}" để cập nhật kho.` };
+    }
+    quantitiesBySku.set(item.sku, (quantitiesBySku.get(item.sku) || 0) + quantity);
+  }
+
+  const changes = [];
+  for (const [sku, quantity] of quantitiesBySku) {
+    const product = products.find(entry => entry.variants.some(variant => variant.sku === sku));
+    const variant = product && product.variants.find(entry => entry.sku === sku);
+    if (!variant) return { success: false, message: `Không tìm thấy SKU hợp lệ "${sku}" để cập nhật kho.` };
+    if (direction === 1 && requireVisible && (!product.isVisible || product.isDeleted)) {
+      return { success: false, message: `Sản phẩm của SKU ${sku} hiện không còn được kinh doanh.` };
+    }
+    if (direction === 1 && variant.stock < quantity) {
+      return { success: false, message: `SKU ${sku} chỉ còn ${variant.stock} sản phẩm trong kho.` };
+    }
+    if (direction === -1 && variant.sold < quantity) {
+      return { success: false, message: `Số lượng đã bán của SKU ${sku} không đủ để hoàn kho.` };
+    }
+    changes.push({ variant, quantity });
+  }
+
+  changes.forEach(({ variant, quantity }) => {
+    variant.stock -= direction * quantity;
+    variant.sold += direction * quantity;
+    variant.imported = variant.stock + variant.sold;
+  });
+  products.forEach(product => {
+    product.stock = product.variants.reduce((sum, variant) => sum + variant.stock, 0);
+    product.sold = product.variants.reduce((sum, variant) => sum + variant.sold, 0);
+    product.soldCount = product.sold;
+    product.imported = product.variants.reduce((sum, variant) => sum + variant.imported, 0);
+  });
+  saveProducts(products);
+  return { success: true, message: '' };
 }
 
 /**
@@ -1968,5 +2139,5 @@ window.getBuyNow = getBuyNow;
 window.setBuyNow = setBuyNow;
 window.clearBuyNow = clearBuyNow;
 window.getOrdersForCurrentUser = getOrdersForCurrentUser;
-window.updateVariantStock = updateVariantStock;
+window.applyOrderInventory = applyOrderInventory;
 window.formatCurrentDate = formatCurrentDate;
