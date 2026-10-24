@@ -53,6 +53,14 @@
   box-shadow: var(--shadow-soft);
 }
 
+.cart-item-checkbox {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  accent-color: var(--color-brand-600);
+  cursor: pointer;
+}
+
 .cart-item-thumb {
   display: grid;
   place-items: center;
