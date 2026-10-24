@@ -4,7 +4,7 @@
  * @param {Object} options - { detailUrl, detailUrlPrefix, basePath, isRoot }
  */
 function renderProductCard(p, options = {}) {
-  if (!p || p.isDeleted) return '';
+  if (!p || p.isDeleted || !p.isVisible) return '';
 
   // 1. Tính toán trực tiếp URL chi tiết sản phẩm
   let detailUrl = '';
@@ -112,7 +112,7 @@ function renderProductGrid(containerId, productList, options = {}) {
   if (!container) return;
 
   // Lọc bỏ sản phẩm đã bị xóa mềm (Soft Delete)
-  let activeList = (productList || []).filter(p => !p.isDeleted);
+  let activeList = (productList || []).filter(p => !p.isDeleted && p.isVisible);
 
   // Trang chủ chỉ ẩn sản phẩm hết hàng khi không hiển thị kết quả đã lọc.
   const isHomePage = options.isHome || (typeof window !== 'undefined' && (
@@ -160,7 +160,7 @@ function handleCardAction(event, productId) {
   }
 
   const products = typeof getProducts === 'function' ? getProducts() : [];
-  const p = products.find(item => item.id === productId || item.code === productId);
+  const p = products.find(item => (item.id === productId || item.code === productId) && !item.isDeleted && item.isVisible);
   if (!p) return;
 
   // Kiểm tra nếu sản phẩm đã hết hàng
@@ -399,30 +399,17 @@ function handleCustomerCancelOrder(orderId) {
         return;
       }
 
-      // Kiểm tra SKU trước để không đổi trạng thái đơn nếu không thể hoàn kho đầy đủ.
-      const invalidItem = (target.items || []).find(item => !item.sku || !findVariantBySku(item.sku));
-      if (invalidItem) {
-        showCustomDialog(`Không thể hoàn kho cho sản phẩm có SKU "${invalidItem.sku || 'không xác định'}". Vui lòng liên hệ cửa hàng để được hỗ trợ.`, 'Không thể hủy đơn', 'error');
+      const inventoryResult = applyOrderInventory(target.items || [], -1);
+      if (!inventoryResult.success) {
+        showCustomDialog(inventoryResult.message, 'Không thể hủy đơn', 'error');
         return;
       }
 
-      const allProds = getProducts();
-      let prodChanged = false;
-      (target.items || []).forEach(item => {
-        const qty = Math.max(1, Math.floor(Number(item.qty) || 1));
-        updateVariantStock(item.sku, qty);
-        allProds.forEach(p => {
-          if (p.variants && p.variants.some(v => v.sku === item.sku)) {
-            p.sold = Math.max(0, (Number(p.sold) || 0) - qty);
-            p.soldCount = p.sold;
-            prodChanged = true;
-          }
-        });
-      });
-      if (prodChanged) saveProducts(allProds);
-
       target.status = 'Đã huỷ';
       saveOrders(allOrders);
+      if (typeof syncCustomerOrderCounts === 'function') {
+        syncCustomerOrderCounts(allOrders);
+      }
       showToast(`Đã hủy đơn #${target.id}, hoàn trả tồn kho và cập nhật lượt bán.`);
 
       if (typeof window.switchProfileTab === 'function') {
