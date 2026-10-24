@@ -35,6 +35,7 @@ function initAdminPortal(options = {}) {
 
   // Trạng thái Accordion và bản nháp điều chỉnh giá theo từng SKU
   let expandedPricing = {}; // { [productId]: boolean }
+  let expandedStock = {};
   let editingPricingId = null; // productId đang ở chế độ Chỉnh sửa giá
   let skuPricingDraft = {}; // { [sku]: { margin, price } }
 
@@ -56,12 +57,21 @@ function initAdminPortal(options = {}) {
   let selectedOrderModal = null;
   let userMessage = '';
   let stockOnlyLow = false;
+  let stockWarningThreshold = 10;
+  let stockSearchQuery = '';
+  let stockDateFrom = '';
+  let stockDateTo = '';
   let orderStatusFilter = '';
   let userSearchQuery = '';
   let prodSearchQuery = '';
+  let prodCategoryFilter = '';
   let catSearchQuery = '';
   let receiptSearchQuery = '';
   let orderSearchQuery = '';
+  let orderDateFrom = '';
+  let orderDateTo = '';
+  let receivedDateFrom = '';
+  let receivedDateTo = '';
   const adminPageSize = 10;
   const currentPageByTab = {
     users: 1,
@@ -130,6 +140,24 @@ function initAdminPortal(options = {}) {
     const page = paginateAdminList(tab, list);
     if (tbody) tbody.innerHTML = rowRenderer(page.items);
     if (footer) footer.outerHTML = renderAdminPagination(tab, list, unitName);
+  }
+
+  function dateFilterKey(value) {
+    if (!value) return '';
+    const isoMatch = String(value).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    const localMatch = String(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (isoMatch) return `${isoMatch[1]}${isoMatch[2].padStart(2, '0')}${isoMatch[3].padStart(2, '0')}`;
+    if (localMatch) return `${localMatch[3]}${localMatch[2].padStart(2, '0')}${localMatch[1].padStart(2, '0')}`;
+    return '';
+  }
+
+  function isDateInRange(value, from, to) {
+    if (!from && !to) return true;
+    const key = dateFilterKey(value);
+    if (!key) return false;
+    const fromKey = dateFilterKey(from);
+    const toKey = dateFilterKey(to);
+    return (!fromKey || key >= fromKey) && (!toKey || key <= toKey);
   }
 
   // ==========================================================================
@@ -616,7 +644,7 @@ function initAdminPortal(options = {}) {
         : `<span class="sku-badge-pill">${p.code}-STD</span>`;
 
       return `
-        <tr>
+        <tr style="${p.isVisible ? '' : 'opacity: 0.5;'}">
           <td>
             <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
               <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: var(--color-surface); display: grid; place-items: center; flex-shrink: 0; overflow: hidden;">
@@ -644,6 +672,15 @@ function initAdminPortal(options = {}) {
           </td>
           <td class="text-center">
             <div style="display: flex; justify-content: center; gap: 4px;">
+              <label class="admin-visibility-switch" title="${p.isVisible ? 'Đang hiển thị' : 'Đang ẩn'}">
+                <input
+                  type="checkbox"
+                  aria-label="${p.isVisible ? 'Ẩn sản phẩm' : 'Hiện sản phẩm'} ${p.name}"
+                  ${p.isVisible ? 'checked' : ''}
+                  onchange="handleToggleProductVisibility(${p.id}, this.checked)"
+                />
+                <span></span>
+              </label>
               <button class="action-icon-btn" title="Chỉnh sửa sản phẩm & phiên bản" onclick="openEditProductForm(${p.id})">
                 <img src="${iconPath}sua.svg" class="icon icon-16" alt="Sửa" />
               </button>
@@ -657,14 +694,11 @@ function initAdminPortal(options = {}) {
     }).join('');
   }
 
-  function renderProducts() {
-    // Nếu đang mở Form Thêm / Sửa sản phẩm
-    if (showProductForm) {
-      return renderProductMatrixForm();
-    }
-
-    // Danh sách sản phẩm chưa bị xóa mềm (Soft Delete)
+  function getProductList() {
     let list = products.filter(p => !p.isDeleted);
+    if (prodCategoryFilter) {
+      list = list.filter(p => p.category === prodCategoryFilter);
+    }
     if (prodSearchQuery) {
       const q = prodSearchQuery.toLowerCase();
       list = list.filter(p =>
@@ -674,6 +708,17 @@ function initAdminPortal(options = {}) {
         (p.variants && p.variants.some(v => v.sku.toLowerCase().includes(q) || v.color.toLowerCase().includes(q)))
       );
     }
+    return list;
+  }
+
+  function renderProducts() {
+    // Nếu đang mở Form Thêm / Sửa sản phẩm
+    if (showProductForm) {
+      return renderProductMatrixForm();
+    }
+
+    // Danh sách sản phẩm chưa bị xóa mềm (Soft Delete)
+    const list = getProductList();
     const page = paginateAdminList('products', list);
 
     return `
@@ -688,6 +733,17 @@ function initAdminPortal(options = {}) {
             value="${prodSearchQuery}" 
             oninput="handleProdSearch(this.value)" 
           />
+        </div>
+        <div style="width: 220px;">
+          <div class="select-wrapper">
+            <select class="select-control" aria-label="Lọc theo danh mục" onchange="handleProdCategoryFilter(this.value)">
+              <option value="">Tất cả danh mục</option>
+              ${Array.from(new Set(categories.map(category => typeof category === 'string' ? category : category.name).filter(Boolean))).map(category => `
+                <option value="${category}" ${prodCategoryFilter === category ? 'selected' : ''}>${category}</option>
+              `).join('')}
+            </select>
+            <span class="select-arrow">▼</span>
+          </div>
         </div>
         <div class="admin-toolbar-actions">
           <button class="btn btn-primary btn-md" onclick="openCreateProductForm()">
@@ -1739,7 +1795,7 @@ function initAdminPortal(options = {}) {
   // ==========================================================================
   function generateOrderRows(list) {
     if (!list || list.length === 0) {
-      return `<tr><td colspan="7" class="text-center" style="padding: 24px; color: var(--color-ink-3);">Không tìm thấy đơn hàng nào.</td></tr>`;
+      return `<tr><td colspan="8" class="text-center" style="padding: 24px; color: var(--color-ink-3);">Không tìm thấy đơn hàng nào.</td></tr>`;
     }
     const statuses = ['Mới đặt', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã huỷ'];
     return list.map(o => `
@@ -1750,6 +1806,7 @@ function initAdminPortal(options = {}) {
           ${o.phone ? `<div style="font-size: 12px; color: var(--color-ink-3);">${o.phone}</div>` : ''}
         </td>
         <td>${o.date}</td>
+        <td>${o.status === 'Đã giao' ? (o.receivedDate || '') : ''}</td>
         <td>${o.pay}</td>
         <td class="text-right"><b style="color: var(--color-ink);">${vnd(o.total)}</b></td>
         <td style="width: 180px;">
@@ -1771,19 +1828,28 @@ function initAdminPortal(options = {}) {
     `).join('');
   }
 
-  function renderOrders() {
+  function getFilteredOrderList() {
     let list = orders;
-    if (orderStatusFilter) {
-      list = list.filter(o => o.status === orderStatusFilter);
-    }
+    if (orderStatusFilter) list = list.filter(order => order.status === orderStatusFilter);
     if (orderSearchQuery) {
-      const q = orderSearchQuery.toLowerCase().trim();
-      list = list.filter(o =>
-        (String(o.id).toLowerCase().includes(q)) ||
-        (o.customer && o.customer.toLowerCase().includes(q)) ||
-        (o.phone && o.phone.replace(/\s+/g, '').includes(q.replace(/\s+/g, '')))
+      const query = orderSearchQuery.toLowerCase().trim();
+      list = list.filter(order =>
+        String(order.id).toLowerCase().includes(query) ||
+        (order.customer && order.customer.toLowerCase().includes(query)) ||
+        (order.phone && order.phone.replace(/\s+/g, '').includes(query.replace(/\s+/g, '')))
       );
     }
+    if (orderDateFrom || orderDateTo) {
+      list = list.filter(order => isDateInRange(order.date, orderDateFrom, orderDateTo));
+    }
+    if (receivedDateFrom || receivedDateTo) {
+      list = list.filter(order => isDateInRange(order.receivedDate, receivedDateFrom, receivedDateTo));
+    }
+    return list;
+  }
+
+  function renderOrders() {
+    const list = getFilteredOrderList();
     const page = paginateAdminList('orders', list);
 
     const statuses = ['Mới đặt', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã huỷ'];
@@ -1812,6 +1878,21 @@ function initAdminPortal(options = {}) {
         </div>
       </div>
 
+      <div class="admin-order-date-filters">
+        <div class="admin-date-range">
+          <label>Ngày đặt</label>
+          <input type="date" class="input-control" value="${orderDateFrom}" onchange="handleOrderDateFilter('orderFrom', this.value)" />
+          <span>đến</span>
+          <input type="date" class="input-control" value="${orderDateTo}" min="${orderDateFrom}" onchange="handleOrderDateFilter('orderTo', this.value)" />
+        </div>
+        <div class="admin-date-range">
+          <label>Ngày nhận</label>
+          <input type="date" class="input-control" value="${receivedDateFrom}" onchange="handleOrderDateFilter('receivedFrom', this.value)" />
+          <span>đến</span>
+          <input type="date" class="input-control" value="${receivedDateTo}" min="${receivedDateFrom}" onchange="handleOrderDateFilter('receivedTo', this.value)" />
+        </div>
+      </div>
+
       <div class="table-responsive">
         <table class="data-table">
           <thead>
@@ -1819,6 +1900,7 @@ function initAdminPortal(options = {}) {
               <th>Mã đơn</th>
               <th>Khách hàng</th>
               <th>Ngày đặt</th>
+              <th>Ngày nhận hàng</th>
               <th>Thanh toán</th>
               <th class="text-right">Tổng tiền</th>
               <th>Trạng thái</th>
@@ -1843,8 +1925,11 @@ function initAdminPortal(options = {}) {
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
               <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--color-ink-3);">
-                <span>Khách hàng: <b>${selectedOrderModal.customer}</b> · Ngày: ${selectedOrderModal.date} · ${selectedOrderModal.pay}</span>
+                <span>Khách hàng: <b>${selectedOrderModal.customer}</b> · Ngày đặt: ${selectedOrderModal.date} · ${selectedOrderModal.pay}</span>
                 <span class="badge badge-${getStatusTone(selectedOrderModal.status)}">${selectedOrderModal.status}</span>
+              </div>
+              <div style="font-size:14px;color:var(--color-ink-2);">
+                Địa chỉ nhận hàng: <b style="color:var(--color-ink);">${selectedOrderModal.address || 'Chưa có thông tin'}</b>
               </div>
 
               <!-- Chi tiết danh sách sản phẩm theo SKU -->
@@ -1899,68 +1984,114 @@ function initAdminPortal(options = {}) {
   // ==========================================================================
   // TAB 8: TỒN KHO (STOCK)
   // ==========================================================================
-  function renderStock() {
-    let list = products.filter(p => !p.isDeleted).map(p => ({ ...p, left: Number(p.stock) || 0 }));
-    if (stockOnlyLow) {
-      list = list.filter(p => p.left <= 10);
+  function getStockData() {
+    const hasDateRange = Boolean(stockDateFrom || stockDateTo);
+    const importedBySku = new Map();
+    const soldBySku = new Map();
+
+    if (hasDateRange) {
+      receipts.filter(receipt =>
+        receipt.status === 'Hoàn thành' && isDateInRange(receipt.date, stockDateFrom, stockDateTo)
+      ).forEach(receipt => {
+        (receipt.items || []).forEach(item => {
+          importedBySku.set(item.sku, (importedBySku.get(item.sku) || 0) + (Number(item.qty) || 0));
+        });
+      });
+
+      orders.filter(order =>
+        order.status !== 'Đã huỷ' &&
+        order.status !== 'Đã hủy' &&
+        isDateInRange(order.date, stockDateFrom, stockDateTo)
+      ).forEach(order => {
+        (order.items || []).forEach(item => {
+          soldBySku.set(item.sku, (soldBySku.get(item.sku) || 0) + (Number(item.qty) || 0));
+        });
+      });
     }
-    const page = paginateAdminList('stock', list);
 
-    // Đếm chính xác số sản phẩm Đã hết hàng (= 0) và Sắp hết hàng (0 < stock <= 10)
-    const activeList = products.filter(p => !p.isDeleted);
-    const outOfStockCount = activeList.filter(p => (Number(p.stock) || 0) <= 0).length;
-    const lowStockCount = activeList.filter(p => (Number(p.stock) || 0) > 0 && (Number(p.stock) || 0) <= 10).length;
+    return products.filter(product => !product.isDeleted).map(product => {
+      const variants = (product.variants || []).map(variant => {
+        const imported = hasDateRange
+          ? importedBySku.get(variant.sku) || 0
+          : Number(variant.imported) || 0;
+        const sold = hasDateRange
+          ? soldBySku.get(variant.sku) || 0
+          : Number(variant.sold) || 0;
+        return {
+          ...variant,
+          imported,
+          sold,
+          stock: hasDateRange ? imported - sold : Number(variant.stock) || 0
+        };
+      });
+      const imported = variants.reduce((sum, variant) => sum + variant.imported, 0);
+      const sold = variants.reduce((sum, variant) => sum + variant.sold, 0);
+      const stock = hasDateRange ? imported - sold : Number(product.stock) || 0;
+      return { ...product, variants, imported, sold, stock };
+    });
+  }
 
-    const rowsHtml = page.items.map(p => {
-      const stock = Number(p.left != null ? p.left : p.stock) || 0;
-      // Thứ tự kiểm tra: Hết hàng (= 0) -> Sắp hết hàng (0 < stock <= 10) -> Còn hàng (> 10)
-      const isOut = stock === 0;
-      const isLow = !isOut && stock <= 10;
-      const rowClass = isOut
-        ? 'background-color: rgba(254, 242, 242, 0.7);'
-        : isLow
-          ? 'background-color: rgba(255, 251, 235, 0.7);'
-          : '';
+  function getFilteredStockList() {
+    let list = getStockData();
+    if (stockSearchQuery) {
+      const query = stockSearchQuery.toLowerCase();
+      list = list.filter(product =>
+        product.name.toLowerCase().includes(query) ||
+        product.code.toLowerCase().includes(query) ||
+        product.variants.some(variant => variant.sku.toLowerCase().includes(query))
+      );
+    }
+    if (stockOnlyLow) list = list.filter(product => product.stock <= stockWarningThreshold);
+    return list;
+  }
 
-      // Định dạng biến thể: Ẩn hoàn toàn chuỗi null/null hoặc (null) đối với phụ kiện, tai nghe, đồng hồ
-      const variantStockList = p.variants ? p.variants.map(v => {
-        const hasRam = v.ram && v.ram !== 'null' && v.ram !== 'Tiêu chuẩn';
-        const hasRom = v.rom && v.rom !== 'null' && v.rom !== 'Tiêu chuẩn';
-        let specStr = '';
-        if (hasRam && hasRom) {
-          specStr = ` (${v.ram}/${v.rom})`;
-        } else if (hasRom) {
-          specStr = ` (${v.rom})`;
-        } else if (hasRam) {
-          specStr = ` (${v.ram})`;
-        }
+  function renderStockStatus(stock) {
+    const isOut = stock <= 0;
+    const isLow = !isOut && stock <= stockWarningThreshold;
+    return `<span class="badge ${isOut ? 'badge-danger' : isLow ? 'badge-warning' : 'badge-success'}">${isOut ? 'Hết hàng' : isLow ? 'Sắp hết hàng' : 'Còn hàng'}</span>`;
+  }
+
+  function generateStockRows(list) {
+    if (!list.length) {
+      return '<tr><td colspan="6" class="text-center" style="padding:24px;color:var(--color-ink-3);">Không tìm thấy sản phẩm phù hợp.</td></tr>';
+    }
+    return list.map(product => {
+      const expanded = Boolean(expandedStock[product.id]);
+      const variantRows = expanded ? product.variants.map(variant => {
+        const hasRam = variant.ram && variant.ram !== 'null' && variant.ram !== 'Tiêu chuẩn';
+        const hasRom = variant.rom && variant.rom !== 'null' && variant.rom !== 'Tiêu chuẩn';
+        const specs = hasRam && hasRom ? ` · ${variant.ram}/${variant.rom}` : hasRom ? ` · ${variant.rom}` : hasRam ? ` · ${variant.ram}` : '';
         return `
-          <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: var(--color-surface); margin-right: 4px; display: inline-block;">
-            ${v.color || 'Màu mặc định'}${specStr}: <b>${v.stock}</b>
-          </span>
+          <tr class="inventory-variant-row">
+            <td></td>
+            <td><span style="font-family:var(--font-mono);font-size:12px;">${variant.sku}</span><span style="color:var(--color-ink-3);"> · ${variant.color || 'Mặc định'}${specs}</span></td>
+            <td class="text-center">${variant.imported}</td>
+            <td class="text-center">${variant.sold}</td>
+            <td class="text-center"><b>${variant.stock}</b></td>
+            <td>${renderStockStatus(variant.stock)}</td>
+          </tr>
         `;
       }).join('') : '';
-
       return `
-        <tr style="${rowClass}">
-          <td><span style="font-family: var(--font-mono); font-size: 12px;">${p.code}</span></td>
-          <td>
-            <b style="color: var(--color-ink);">${p.name}</b>
-            <div style="margin-top: 4px;">${variantStockList}</div>
-          </td>
-          <td class="text-center">${p.imported || 0}</td>
-          <td class="text-center">${p.sold || 0}</td>
-          <td class="text-center">
-            <b style="font-size: 16px; color: ${isOut ? '#dc2626' : isLow ? '#d97706' : 'var(--color-ink)'};">${stock}</b>
-          </td>
-          <td>
-            <span class="badge ${isOut ? 'badge-danger' : isLow ? 'badge-warning' : 'badge-success'}">
-              ${isOut ? 'Hết hàng' : isLow ? 'Sắp hết hàng' : 'Còn hàng'}
-            </span>
-          </td>
+        <tr class="inventory-product-row" onclick="toggleStockAccordion(${product.id})" aria-expanded="${expanded}">
+          <td><span style="font-family:var(--font-mono);font-size:12px;">${product.code}</span></td>
+          <td><span class="accordion-caret" style="display:inline-block;transform:rotate(${expanded ? '90deg' : '0deg'});transition:transform .2s;">&#9658;</span> <b style="color:var(--color-ink);">${product.name}</b><span style="color:var(--color-ink-3);"> · ${product.variants.length} SKU</span></td>
+          <td class="text-center">${product.imported}</td>
+          <td class="text-center">${product.sold}</td>
+          <td class="text-center"><b style="font-size:16px;">${product.stock}</b></td>
+          <td>${renderStockStatus(product.stock)}</td>
         </tr>
+        ${variantRows}
       `;
     }).join('');
+  }
+
+  function renderStock() {
+    const list = getFilteredStockList();
+    const page = paginateAdminList('stock', list);
+    const activeList = products.filter(product => !product.isDeleted);
+    const outOfStockCount = activeList.filter(product => (Number(product.stock) || 0) <= 0).length;
+    const lowStockCount = activeList.filter(product => (Number(product.stock) || 0) > 0 && (Number(product.stock) || 0) <= stockWarningThreshold).length;
 
     return `
       ${(outOfStockCount > 0 || lowStockCount > 0) ? `
@@ -1970,10 +2101,26 @@ function initAdminPortal(options = {}) {
         </div>
       ` : ''}
 
+      <div class="admin-toolbar stock-filters-toolbar">
+        <div class="admin-search-wrap">
+          <img src="${iconPath}tim-kiem.svg" class="icon icon-16" alt="" />
+          <input type="search" id="stockSearchInput" class="input-control" placeholder="Tìm tên, mã hoặc SKU..." value="${stockSearchQuery}" oninput="handleStockSearch(this.value)" />
+        </div>
+        <label class="admin-filter-field">Mức cảnh báo
+          <input type="number" class="input-control" min="0" step="1" value="${stockWarningThreshold}" onchange="handleStockThreshold(this.value)" />
+        </label>
+        <label class="admin-filter-field">Từ ngày
+          <input type="date" class="input-control" value="${stockDateFrom}" onchange="handleStockDateFilter('from', this.value)" />
+        </label>
+        <label class="admin-filter-field">Đến ngày
+          <input type="date" class="input-control" value="${stockDateTo}" min="${stockDateFrom}" onchange="handleStockDateFilter('to', this.value)" />
+        </label>
+      </div>
+
       <div class="admin-toolbar">
         <label class="checkbox-label">
           <input type="checkbox" ${stockOnlyLow ? 'checked' : ''} onchange="toggleStockLowOnly(this.checked)" />
-          Chỉ hiện sản phẩm cần bổ sung (Hết hàng & Sắp hết ≤ 10)
+          Chỉ hiện sản phẩm cần bổ sung
         </label>
       </div>
 
@@ -1989,8 +2136,8 @@ function initAdminPortal(options = {}) {
               <th>Tình trạng</th>
             </tr>
           </thead>
-          <tbody>
-            ${rowsHtml}
+          <tbody id="stockTableBody">
+            ${generateStockRows(page.items)}
           </tbody>
         </table>
       </div>
@@ -2055,17 +2202,21 @@ function initAdminPortal(options = {}) {
   window.handleProdSearch = (val) => {
     prodSearchQuery = val;
     currentPageByTab.products = 1;
-    let list = products.filter(p => !p.isDeleted);
-    if (prodSearchQuery) {
-      const q = prodSearchQuery.toLowerCase();
-      list = list.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        p.code.toLowerCase().includes(q) ||
-        p.brand.toLowerCase().includes(q) ||
-        (p.variants && p.variants.some(v => v.sku.toLowerCase().includes(q) || v.color.toLowerCase().includes(q)))
-      );
-    }
-    refreshAdminTable('products', list, 'prodTableBody', generateProductRows, 'sản phẩm');
+    refreshAdminTable('products', getProductList(), 'prodTableBody', generateProductRows, 'sản phẩm');
+  };
+
+  window.handleProdCategoryFilter = (category) => {
+    prodCategoryFilter = category;
+    currentPageByTab.products = 1;
+    render();
+  };
+
+  window.handleToggleProductVisibility = (id, isVisible) => {
+    products = products.map(product => product.id === id ? { ...product, isVisible } : product);
+    saveProducts(products);
+    products = getProducts();
+    showToast(isVisible ? 'Sản phẩm đã được hiển thị.' : 'Sản phẩm đã được ẩn.');
+    render();
   };
 
   window.handleUserSearch = (val) => {
@@ -2119,19 +2270,16 @@ function initAdminPortal(options = {}) {
   window.handleOrderSearch = (val) => {
     orderSearchQuery = val;
     currentPageByTab.orders = 1;
-    let list = orders;
-    if (orderStatusFilter) {
-      list = list.filter(o => o.status === orderStatusFilter);
-    }
-    if (orderSearchQuery) {
-      const q = orderSearchQuery.toLowerCase().trim();
-      list = list.filter(o =>
-        (String(o.id).toLowerCase().includes(q)) ||
-        (o.customer && o.customer.toLowerCase().includes(q)) ||
-        (o.phone && o.phone.replace(/\s+/g, '').includes(q.replace(/\s+/g, '')))
-      );
-    }
-    refreshAdminTable('orders', list, 'orderTableBody', generateOrderRows, 'đơn hàng');
+    refreshAdminTable('orders', getFilteredOrderList(), 'orderTableBody', generateOrderRows, 'đơn hàng');
+  };
+
+  window.handleOrderDateFilter = (filter, value) => {
+    if (filter === 'orderFrom') orderDateFrom = value;
+    if (filter === 'orderTo') orderDateTo = value;
+    if (filter === 'receivedFrom') receivedDateFrom = value;
+    if (filter === 'receivedTo') receivedDateTo = value;
+    currentPageByTab.orders = 1;
+    render();
   };
 
   // --------------------------------------------------------------------------
@@ -2279,6 +2427,10 @@ function initAdminPortal(options = {}) {
       return;
     }
     const targetVariant = formVariants[index];
+    if (targetVariant && (Number(targetVariant.stock) > 0 || Number(targetVariant.sold) > 0 || Number(targetVariant.imported) > 0)) {
+      showCustomDialog('Không thể xóa phiên bản đã phát sinh tồn kho hoặc giao dịch.', 'Không thể xóa phiên bản', 'warning');
+      return;
+    }
     const variantDesc = targetVariant
       ? `${targetVariant.color || ''} ${targetVariant.ram ? targetVariant.ram + '/' : ''}${targetVariant.rom || ''} (${targetVariant.sku || ''})`
       : `dòng ${index + 1}`;
@@ -2434,7 +2586,15 @@ function initAdminPortal(options = {}) {
                 price: basePrice,
                 cost: minCost,
                 stock: totalStock,
-                variants: formVariants
+                variants: formVariants.map(variant => {
+                  const previous = p.variants.find(item => item.sku === variant.sku);
+                  const sold = previous ? Number(previous.sold) || 0 : 0;
+                  return {
+                    ...variant,
+                    sold,
+                    imported: (Number(variant.stock) || 0) + sold
+                  };
+                })
               };
             }
             return p;
@@ -2455,6 +2615,7 @@ function initAdminPortal(options = {}) {
             image: formImageBase64,
             createdAt: new Date().toISOString().split('T')[0],
             isDeleted: false,
+            isVisible: true,
             attributes: cat === 'Tai nghe' || cat === 'Phụ kiện' ? ['Màu sắc'] : (cat === 'Đồng hồ thông minh' ? ['Màu sắc', 'ROM'] : ['Màu sắc', 'RAM', 'ROM']),
             rating: 5.0,
             isNew: true,
@@ -2639,6 +2800,7 @@ function initAdminPortal(options = {}) {
           const targetVariant = p.variants.find(v => v.sku === line.sku);
           if (targetVariant) {
             targetVariant.stock = (targetVariant.stock || 0) + q;
+            targetVariant.imported = (targetVariant.imported || 0) + q;
             targetVariant.cost = c; // Cập nhật lại giá vốn theo phiếu nhập mới
             p.imported = (p.imported || 0) + q;
             // Tính lại tổng tồn kho của sản phẩm gốc
@@ -2816,60 +2978,42 @@ function initAdminPortal(options = {}) {
     if (!targetOrder) return;
 
     const oldStatus = targetOrder.status;
+    if (newStatus === oldStatus) return;
+    const wasCancelled = oldStatus === 'Đã huỷ' || oldStatus === 'Đã hủy';
+    const willBeCancelled = newStatus === 'Đã huỷ' || newStatus === 'Đã hủy';
 
-    // Nếu đơn hàng bị hủy -> Hoàn trả tồn kho cho các biến thể & giảm lượt bán p.sold
-    if (newStatus === 'Đã huỷ' && oldStatus !== 'Đã huỷ') {
-      const allProds = getProducts();
-      let prodChanged = false;
-      (targetOrder.items || []).forEach(it => {
-        const sku = it.sku;
-        const q = it.qty || 1;
-        if (sku) {
-          updateVariantStock(sku, q);
-          allProds.forEach(p => {
-            if (p.variants && p.variants.some(v => v.sku === sku)) {
-              p.sold = Math.max(0, (Number(p.sold) || 0) - q);
-              p.soldCount = p.sold;
-              prodChanged = true;
-            }
-          });
-        }
-      });
-      if (prodChanged) saveProducts(allProds);
+    if (willBeCancelled && !wasCancelled) {
+      const inventoryResult = applyOrderInventory(targetOrder.items || [], -1);
+      if (!inventoryResult.success) {
+        showCustomDialog(inventoryResult.message, 'Không thể hủy đơn', 'error');
+        render();
+        return;
+      }
       showToast(`Đã hủy đơn #${id}, hoàn trả tồn kho và cập nhật lượt bán!`);
-    } else if (oldStatus === 'Đã huỷ' && newStatus !== 'Đã huỷ') {
-      // Nếu phục hồi lại đơn hàng -> Trừ lại tồn kho & cộng lại lượt bán p.sold
-      const allProds = getProducts();
-      let prodChanged = false;
-      (targetOrder.items || []).forEach(it => {
-        const sku = it.sku;
-        const q = it.qty || 1;
-        if (sku) {
-          updateVariantStock(sku, -q);
-          allProds.forEach(p => {
-            if (p.variants && p.variants.some(v => v.sku === sku)) {
-              p.sold = (Number(p.sold) || 0) + q;
-              p.soldCount = p.sold;
-              prodChanged = true;
-            }
-          });
-        }
-      });
-      if (prodChanged) saveProducts(allProds);
+    } else if (wasCancelled && !willBeCancelled) {
+      const inventoryResult = applyOrderInventory(targetOrder.items || [], 1, false);
+      if (!inventoryResult.success) {
+        showCustomDialog(inventoryResult.message, 'Không thể khôi phục đơn', 'error');
+        render();
+        return;
+      }
       showToast(`Đã phục hồi đơn #${id}, trừ tồn kho và cập nhật lượt bán!`);
     }
 
     targetOrder.status = newStatus;
+    if (newStatus === 'Đã giao' && oldStatus !== 'Đã giao') {
+      targetOrder.receivedDate = formatCurrentDate();
+    } else if (newStatus !== 'Đã giao') {
+      delete targetOrder.receivedDate;
+    }
     saveOrders(orders);
     // Đồng bộ số đơn đã lưu của khách khi trạng thái đơn hàng thay đổi.
     if (typeof syncCustomerOrderCounts === 'function') {
       customers = syncCustomerOrderCounts(orders);
     }
 
-    if (selectedOrderModal && selectedOrderModal.id === id) {
-      selectedOrderModal.status = newStatus;
-    }
-    products = getProducts(); // Đồng bộ lại stock
+    selectedOrderModal = orders.find(order => order.id === id) || null;
+    products = getProducts();
     render();
   };
 
@@ -3018,6 +3162,36 @@ function initAdminPortal(options = {}) {
   window.toggleStockLowOnly = (checked) => {
     stockOnlyLow = checked;
     currentPageByTab.stock = 1;
+    render();
+  };
+
+  window.handleStockSearch = (query) => {
+    stockSearchQuery = query;
+    currentPageByTab.stock = 1;
+    refreshAdminTable('stock', getFilteredStockList(), 'stockTableBody', generateStockRows, 'sản phẩm');
+  };
+
+  window.handleStockThreshold = (value) => {
+    const threshold = Number(value);
+    if (!Number.isInteger(threshold) || threshold < 0) {
+      showCustomDialog('Mức cảnh báo phải là số nguyên không âm.', 'Giá trị không hợp lệ', 'warning');
+      render();
+      return;
+    }
+    stockWarningThreshold = threshold;
+    currentPageByTab.stock = 1;
+    render();
+  };
+
+  window.handleStockDateFilter = (range, value) => {
+    if (range === 'from') stockDateFrom = value;
+    if (range === 'to') stockDateTo = value;
+    currentPageByTab.stock = 1;
+    render();
+  };
+
+  window.toggleStockAccordion = (productId) => {
+    expandedStock[productId] = !expandedStock[productId];
     render();
   };
 
