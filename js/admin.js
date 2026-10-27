@@ -221,7 +221,8 @@ function initAdminPortal(options = {}) {
       <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="admin-sidebar">
-          <a href="${homeUrl}" class="admin-sidebar-logo">
+          <!-- TASK 4: Click vào logo/tiêu đề Techno Admin điều hướng về trang Tổng quan Admin thay vì trang User -->
+          <a href="javascript:void(0)" onclick="switchAdminTab('dash')" class="admin-sidebar-logo" title="Trang tổng quan Admin">
             <img src="${iconPath}dien-thoai.svg" class="icon icon-32" alt="" />
             Techno<span class="brand-accent">Admin</span>
           </a>
@@ -1800,7 +1801,7 @@ function initAdminPortal(options = {}) {
     if (!list || list.length === 0) {
       return `<tr><td colspan="8" class="text-center" style="padding: 24px; color: var(--color-ink-3);">Không tìm thấy đơn hàng nào.</td></tr>`;
     }
-    // TASK 1 & 2: Luồng trạng thái chuẩn mới: Chờ xác nhận | Đã xác nhận | Đang giao | Đã giao | Đã huỷ
+    // Luồng trạng thái chuẩn mới: Chờ xác nhận | Đã xác nhận | Đang giao | Đã giao | Đã huỷ
     const statuses = ['Chờ xác nhận', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã huỷ'];
     return list.map(o => `
       <tr>
@@ -1812,7 +1813,8 @@ function initAdminPortal(options = {}) {
         <td>${o.date}</td>
         <td>${o.status === 'Đã giao' ? (o.receivedDate || '') : ''}</td>
         <td>${o.pay}</td>
-        <td class="text-right"><b style="color: var(--color-ink);">${vnd(o.total)}</b></td>
+        <!-- TASK 2: Cột Tổng tiền hiển thị màu xanh dương (var(--color-brand-700)) -->
+        <td class="text-right"><b style="color: var(--color-brand-700);">${vnd(o.total)}</b></td>
         <td style="width: 180px;">
           <div class="select-wrapper">
             <select class="select-control" style="height: 36px; font-size: 13px;" onchange="handleChangeOrderStatus('${o.id}', this.value)">
@@ -1859,6 +1861,23 @@ function initAdminPortal(options = {}) {
     const statuses = ['Chờ xác nhận', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã huỷ'];
 
     return `
+      <!-- Thanh lọc trạng thái đơn hàng dạng Button Chips đồng bộ với User -->
+      <div class="order-status-chips-wrap" style="margin-bottom: 16px;">
+        ${['Tất cả', ...statuses].map(st => {
+          const val = st === 'Tất cả' ? '' : st;
+          const isActive = (!orderStatusFilter && st === 'Tất cả') || (orderStatusFilter === st);
+          return `
+            <button 
+              type="button" 
+              class="order-filter-chip ${isActive ? 'active' : ''}" 
+              onclick="handleFilterOrderStatus('${val}')"
+            >
+              ${st}
+            </button>
+          `;
+        }).join('')}
+      </div>
+
       <div class="admin-toolbar" style="margin-bottom: 20px;">
         <div class="admin-search-wrap" style="flex: 1; max-width: 380px;">
           <img src="${iconPath}tim-kiem.svg" class="icon icon-16" alt="" />
@@ -2071,7 +2090,8 @@ function initAdminPortal(options = {}) {
             <td><span style="font-family:var(--font-mono);font-size:12px;">${variant.sku}</span><span style="color:var(--color-ink-3);"> · ${variant.color || 'Mặc định'}${specs}</span></td>
             <td class="text-center">${variant.imported}</td>
             <td class="text-center">${variant.sold}</td>
-            <td class="text-center"><b>${variant.stock}</b></td>
+            <!-- TASK 3: Số tồn kho phiên bản con hiển thị màu xanh dương -->
+            <td class="text-center"><b style="color: var(--color-brand-700);">${variant.stock}</b></td>
             <td>${renderStockStatus(variant.stock)}</td>
           </tr>
         `;
@@ -2087,7 +2107,8 @@ function initAdminPortal(options = {}) {
           </td>
           <td class="text-center">${product.imported}</td>
           <td class="text-center">${product.sold}</td>
-          <td class="text-center"><b style="font-size:16px;">${product.stock}</b></td>
+          <!-- TASK 3: Số tồn kho thực tế của sản phẩm cha hiển thị màu xanh dương -->
+          <td class="text-center"><b style="font-size:16px; color: var(--color-brand-700);">${product.stock}</b></td>
           <td>${renderStockStatus(product.stock)}</td>
         </tr>
         ${variantRows}
