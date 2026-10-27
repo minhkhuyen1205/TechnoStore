@@ -13,7 +13,8 @@ function initCartPage(options = {}) {
   const basePath = options.basePath || '';
   const customerPath = `${basePath}view/customer/`;
   const homeUrl = options.isRoot ? 'index.html' : `${basePath}index.html`;
-  const selectedSkus = new Set(getCart().map(item => item.sku));
+  // TASK 1: Khi tải trang Giỏ hàng, các ô vuông tick chọn sản phẩm phải ở trạng thái Unchecked (để trống)
+  const selectedSkus = new Set();
 
   /**
    * ĐỒNG BỘ TỒN KHO THỰC TẾ VỚI GIỎ HÀNG KHÁCH HÀNG (REAL-TIME INVENTORY RECONCILIATION)
