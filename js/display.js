@@ -395,7 +395,7 @@ function renderOrderCardHtml(o, allProducts = []) {
       ` : ''}
       ${o.status === 'Đang giao' ? `
         <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
-          <button type="button" class="btn btn-primary btn-sm" style="font-weight: 600;" onclick="handleCustomerConfirmReceived('${o.id}')">&#10003; Đã nhận được hàng</button>
+          <button type="button" class="btn btn-ghost btn-sm" style="color: var(--color-brand-600); border: 1.5px solid var(--color-brand-600); border-radius: 8px; padding: 6px 16px; font-weight: 600; background: #ffffff;" onclick="handleCustomerConfirmReceived('${o.id}')">Đã nhận được hàng</button>
         </div>
       ` : ''}
     </div>
