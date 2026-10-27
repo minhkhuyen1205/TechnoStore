@@ -427,7 +427,7 @@ function initProfilePage(options = {}) {
             ` : ''}
             ${o.status === 'Đang giao' ? `
               <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
-                <button type="button" class="btn btn-primary btn-sm" style="font-weight: 600;" onclick="handleCustomerConfirmReceived('${o.id}')">&#10003; Đã nhận được hàng</button>
+                <button type="button" class="btn btn-ghost btn-sm" style="color: var(--color-brand-600); border: 1.5px solid var(--color-brand-600); border-radius: 8px; padding: 6px 16px; font-weight: 600; background: #ffffff;" onclick="handleCustomerConfirmReceived('${o.id}')">Đã nhận được hàng</button>
               </div>
             ` : ''}
           </div>
@@ -514,9 +514,9 @@ function initProfilePage(options = {}) {
           <div>
             <!-- Tab 1: Orders -->
             ${activeTab === 'orders' ? `
-              <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;" id="profileOrderFilterPills">
+              <div class="order-status-chips-wrap" style="margin-bottom: 20px;" id="profileOrderFilterPills">
                 ${ORDER_STATUSES.map(s => `
-                  <button type="button" class="cat-pill-btn ${((!activeOrderStatus && s === 'Tất cả') || activeOrderStatus === s) ? 'active' : ''}" onclick="switchOrderStatus('${s}')">${s}</button>
+                  <button type="button" class="order-filter-chip ${((!activeOrderStatus && s === 'Tất cả') || activeOrderStatus === s) ? 'active' : ''}" onclick="switchOrderStatus('${s}')">${s}</button>
                 `).join('')}
               </div>
               <div class="orders-list-wrap">
@@ -563,6 +563,17 @@ function initProfilePage(options = {}) {
       </div>
     `;
   }
+
+  // TASK 4: Điều hướng tab Hồ sơ cá nhân / Sổ địa chỉ / Lịch sử đơn hàng
+  window.switchProfileTab = (tab) => {
+    activeTab = tab;
+    try {
+      const url = new URL(window.location);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, '', url);
+    } catch (e) {}
+    render();
+  };
 
   window.switchOrderStatus = (status) => {
     activeOrderStatus = status === 'Tất cả' ? '' : status;
