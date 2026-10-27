@@ -1522,6 +1522,7 @@ function initDefaultData(forceReset = false) {
       localStorage.removeItem('techno_receipts');
       localStorage.removeItem('techno_customers');
       localStorage.removeItem('techno_buy_now');
+      localStorage.removeItem('techno_admin');
 
       setStorage('techno_products', defaultProducts);
       setStorage('techno_categories', defaultCategories);
