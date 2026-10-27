@@ -29,14 +29,14 @@
       <a href="profile.html" class="btn btn-secondary btn-sm">Xem hồ sơ cá nhân</a>
     </div>
 
-    <!-- Status Filter Pills -->
-    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;" id="orderFilterPills">
-      <button class="cat-pill-btn active" onclick="filterOrderHistory('')">Tất cả</button>
-      <button class="cat-pill-btn" onclick="filterOrderHistory('Chờ xác nhận')">Chờ xác nhận</button>
-      <button class="cat-pill-btn" onclick="filterOrderHistory('Đã xác nhận')">Đã xác nhận</button>
-      <button class="cat-pill-btn" onclick="filterOrderHistory('Đang giao')">Đang giao</button>
-      <button class="cat-pill-btn" onclick="filterOrderHistory('Đã giao')">Đã giao</button>
-      <button class="cat-pill-btn" onclick="filterOrderHistory('Đã huỷ')">Đã huỷ</button>
+    <!-- Status Filter Chips (TASK 2) -->
+    <div class="order-status-chips-wrap" style="margin-bottom: 24px;" id="orderFilterPills">
+      <button class="order-filter-chip active" onclick="filterOrderHistory('')">Tất cả</button>
+      <button class="order-filter-chip" onclick="filterOrderHistory('Chờ xác nhận')">Chờ xác nhận</button>
+      <button class="order-filter-chip" onclick="filterOrderHistory('Đã xác nhận')">Đã xác nhận</button>
+      <button class="order-filter-chip" onclick="filterOrderHistory('Đang giao')">Đang giao</button>
+      <button class="order-filter-chip" onclick="filterOrderHistory('Đã giao')">Đã giao</button>
+      <button class="order-filter-chip" onclick="filterOrderHistory('Đã huỷ')">Đã huỷ</button>
     </div>
 
     <!-- Orders List Wrap -->
@@ -86,7 +86,7 @@
 
     function filterOrderHistory(status) {
       activeStatusFilter = status;
-      document.querySelectorAll('#orderFilterPills .cat-pill-btn').forEach(btn => {
+      document.querySelectorAll('#orderFilterPills .order-filter-chip').forEach(btn => {
         btn.classList.toggle('active', btn.textContent.trim() === (status || 'Tất cả'));
       });
       renderOrderHistory();

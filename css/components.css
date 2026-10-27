@@ -1131,3 +1131,45 @@ input[type="range"] {
   width: 32px;
   height: 32px;
 }
+
+/* ==========================================================================
+   TASK 2: Order Status Filter Chips / Buttons (User & Admin)
+   ========================================================================== */
+.order-status-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.order-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  border-radius: var(--radius-full, 9999px);
+  border: 1.5px solid var(--color-line, #e2e8f0);
+  background-color: var(--color-white, #ffffff);
+  color: var(--color-ink-2, #334155);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast, 0.15s ease);
+  outline: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.order-filter-chip:hover {
+  background-color: var(--color-brand-50, #eff6ff);
+  border-color: var(--color-brand-600, #2563eb);
+  color: var(--color-brand-700, #1d4ed8);
+}
+
+.order-filter-chip.active {
+  background-color: var(--color-brand-600, #2563eb) !important;
+  border-color: var(--color-brand-600, #2563eb) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
