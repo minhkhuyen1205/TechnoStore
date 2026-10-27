@@ -159,6 +159,20 @@ function handleCardAction(event, productId) {
     event.preventDefault();
   }
 
+  // TASK 10: Chặn thêm vào giỏ khi chưa đăng nhập
+  const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+  if (!currentUser) {
+    const isCustomerDir = window.location.pathname.includes('/customer/') || window.location.pathname.includes('/view/');
+    const loginUrl = isCustomerDir ? `login.html?redirect=cart.html` : `view/customer/login.html?redirect=cart.html`;
+    showCustomDialog(
+      'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!',
+      'Yêu cầu đăng nhập',
+      'warning',
+      () => { window.location.href = loginUrl; }
+    );
+    return;
+  }
+
   const products = typeof getProducts === 'function' ? getProducts() : [];
   const p = products.find(item => (item.id === productId || item.code === productId) && !item.isDeleted && item.isVisible);
   if (!p) return;
@@ -241,11 +255,13 @@ function showToast(message) {
  */
 function getStatusTone(s) {
   const map = {
-    'Mới đặt': 'info',
-    'Đã xác nhận': 'warning',
+    // TASK 1: Luồng trạng thái chuẩn mới
+    'Chờ xác nhận': 'warning',
+    'Đã xác nhận': 'info',
     'Đang giao': 'warning',
     'Đã giao': 'success',
     'Đã huỷ': 'danger',
+    'Mới đặt': 'warning', // fallback tương thích
     'Hoàn thành': 'success',
     'Nháp': 'neutral',
     'Hoạt động': 'success',
@@ -370,20 +386,27 @@ function renderOrderCardHtml(o, allProducts = []) {
         <span style="font-size: 14px; color: var(--color-ink-3);">Tổng tiền thanh toán</span>
         <span class="order-total-price" style="color: var(--color-brand-600); font-size: 18px;">${vnd(o.total)}</span>
       </div>
-      ${o.status === 'Mới đặt' ? `
-        <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
-          <button type="button" class="btn btn-ghost btn-sm" style="color: #dc2626;" onclick="handleCustomerCancelOrder('${o.id}')">Hủy đơn</button>
+
+      <!-- TASK 3: Nút thao tác User - Nút Hủy đơn chỉ hiển thị khi đơn ở trạng thái "Chờ xác nhận" -->
+      ${o.status === 'Chờ xác nhận' ? `
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+          <button type="button" class="btn btn-ghost btn-sm" style="color: #dc2626; border: 1px solid #dc2626; border-radius: 8px; padding: 6px 16px; font-weight: 600;" onclick="handleCustomerCancelOrder('${o.id}')">Hủy đơn</button>
+        </div>
+      ` : ''}
+      ${o.status === 'Đang giao' ? `
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+          <button type="button" class="btn btn-primary btn-sm" style="font-weight: 600;" onclick="handleCustomerConfirmReceived('${o.id}')">&#10003; Đã nhận được hàng</button>
         </div>
       ` : ''}
     </div>
   `;
 }
 
-// Khách chỉ được hủy đơn "Mới đặt" thuộc tài khoản của mình; tồn kho được hoàn lại theo SKU.
+// TASK 3: Hàm hủy đơn - chỉ cho phép khi "Chờ xác nhận"
 function handleCustomerCancelOrder(orderId) {
   const order = getOrdersForCurrentUser().find(item => String(item.id) === String(orderId));
-  if (!order || order.status !== 'Mới đặt') {
-    showCustomDialog('Chỉ có thể hủy đơn hàng đang ở trạng thái "Mới đặt".', 'Không thể hủy đơn', 'warning');
+  if (!order || order.status !== 'Chờ xác nhận') {
+    showCustomDialog('Chỉ có thể hủy đơn hàng đang ở trạng thái "Chờ xác nhận".', 'Không thể hủy đơn', 'warning');
     return;
   }
 
@@ -394,7 +417,7 @@ function handleCustomerCancelOrder(orderId) {
     () => {
       const allOrders = getOrders();
       const target = allOrders.find(item => String(item.id) === String(orderId));
-      if (!target || target.status !== 'Mới đặt') {
+      if (!target || target.status !== 'Chờ xác nhận') {
         showCustomDialog('Trạng thái đơn hàng đã thay đổi, vui lòng tải lại trang.', 'Không thể hủy đơn', 'error');
         return;
       }
@@ -422,6 +445,48 @@ function handleCustomerCancelOrder(orderId) {
   );
 }
 
+/**
+ * TASK 4: Hàm xác nhận đã nhận được hàng - User bấm khi đơn đang giao
+ * Logic: Chuyển trạng thái → "Đã giao" và đồng bộ số đơn khách hàng bên Admin
+ */
+function handleCustomerConfirmReceived(orderId) {
+  const order = getOrdersForCurrentUser().find(item => String(item.id) === String(orderId));
+  if (!order || order.status !== 'Đang giao') {
+    showCustomDialog('Chỉ xác nhận nhận hàng khi đơn đang trong trạng thái "Đang giao".', 'Thông báo', 'warning');
+    return;
+  }
+
+  showCustomDialog(
+    `Xác nhận bạn đã nhận được đơn hàng #${order.id}?`,
+    'Đã nhận được hàng',
+    'info',
+    () => {
+      const allOrders = getOrders();
+      const target = allOrders.find(item => String(item.id) === String(orderId));
+      if (!target || target.status !== 'Đang giao') {
+        showCustomDialog('Trạng thái đơn hàng đã thay đổi, vui lòng tải lại trang.', 'Lỗi', 'error');
+        return;
+      }
+      // Chuyển sang "Đã giao" và ghi nhận ngày nhận
+      target.status = 'Đã giao';
+      target.receivedDate = typeof formatCurrentDate === 'function' ? formatCurrentDate() : new Date().toLocaleDateString('vi-VN');
+      saveOrders(allOrders);
+      // Đồng bộ số đơn khách hàng bên Admin
+      if (typeof syncCustomerOrderCounts === 'function') {
+        syncCustomerOrderCounts(allOrders);
+      }
+      showToast(`Đã xác nhận nhận hàng đơn #${target.id}. Cảm ơn bạn đã mua hàng!`);
+
+      if (typeof window.switchProfileTab === 'function') {
+        window.switchProfileTab('orders');
+      } else {
+        renderCustomerOrderHistory('orderHistoryList', window.activeStatusFilter || '');
+      }
+    },
+    { confirmText: 'Xác nhận đã nhận hàng', cancelText: 'Chưa nhận' }
+  );
+}
+
 window.renderProductCard = renderProductCard;
 window.renderProductGrid = renderProductGrid;
 window.showToast = showToast;
@@ -429,3 +494,5 @@ window.getStatusTone = getStatusTone;
 window.renderOrderCardHtml = renderOrderCardHtml;
 window.renderCustomerOrderHistory = renderCustomerOrderHistory;
 window.handleCustomerCancelOrder = handleCustomerCancelOrder;
+// TASK 4: Export hàm xác nhận đã nhận hàng
+window.handleCustomerConfirmReceived = handleCustomerConfirmReceived;
