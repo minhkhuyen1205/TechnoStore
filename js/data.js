@@ -1099,7 +1099,7 @@ const defaultOrders = [
     phone: '0901234567',
     date: '02/10/2026',
     total: 34990000,
-    status: 'Mới đặt',
+    status: 'Chờ xác nhận',
     pay: 'Chuyển khoản',
     address: '45 Lê Lợi, P. Bến Nghé, Quận 1, TP.HCM (Nhà riêng)',
     items: [
@@ -1474,7 +1474,7 @@ function normalizeProduct(p) {
   return p;
 }
 
-const DATA_VERSION = 'techno_v2.4_clean_refactor';
+const DATA_VERSION = 'techno_v2.5_order_status_refactor';
 
 /**
  * Làm sạch và tự động khôi phục LocalStorage (initDefaultData)
@@ -1514,7 +1514,7 @@ function initDefaultData(forceReset = false) {
     }
 
     if (needReset) {
-      console.log('[TechnoStore] Đồng bộ Mock Data v2.3: Làm sạch và nạp 20 sản phẩm chuẩn, danh mục có status và sổ địa chỉ...');
+      console.log('[TechnoStore] Đồng bộ Mock Data v2.5: Cập nhật luồng trạng thái đơn hàng chuẩn mới...');
       localStorage.setItem('techno_data_version', DATA_VERSION);
       localStorage.removeItem('techno_products');
       localStorage.removeItem('techno_categories');
@@ -1534,6 +1534,21 @@ function initDefaultData(forceReset = false) {
         setStorage('techno_cart', [
           { sku: 'SP001-TITAN_DEN-8GB-256GB', productId: 1, qty: 1 }
         ]);
+      }
+    } else {
+      // Tự động quét và chuẩn hóa các đơn hàng cũ còn lưu trong LocalStorage nếu có
+      const storedOrders = getStorage('techno_orders', null);
+      if (Array.isArray(storedOrders)) {
+        let hasOrderMigrated = false;
+        storedOrders.forEach(o => {
+          if (o.status === 'Mới đặt') {
+            o.status = 'Chờ xác nhận';
+            hasOrderMigrated = true;
+          }
+        });
+        if (hasOrderMigrated) {
+          setStorage('techno_orders', storedOrders);
+        }
       }
     }
 
