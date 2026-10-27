@@ -843,7 +843,7 @@ function initCheckoutPage(options = {}) {
           date: typeof formatCurrentDate === 'function' ? formatCurrentDate() : new Date().toLocaleDateString('vi-VN'),
           total: subtotal + ship,
           shippingFee: ship,
-          status: 'Mới đặt',
+          status: 'Chờ xác nhận',
           pay: paymentLabelMap[selectedPayment] || 'Tiền mặt',
           items: orderItems
         };
