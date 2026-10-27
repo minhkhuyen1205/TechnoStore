@@ -230,10 +230,7 @@ function initAdminPortal(options = {}) {
             ${sidebarLinks}
           </nav>
 
-          <a href="${homeUrl}" class="admin-nav-item">
-            <img src="${iconPath}cua-hang.svg" class="icon icon-18" alt="" />
-            Xem cửa hàng
-          </a>
+          <!-- TASK 5: Đã xóa tab "Xem cửa hàng" theo yêu cầu -->
           <button class="admin-nav-item admin-logout" onclick="handleAdminLogout()">
             <img src="${iconPath}thoat.svg" class="icon icon-18" alt="" />
             Đăng xuất
@@ -283,14 +280,20 @@ function initAdminPortal(options = {}) {
   // TAB 1: TỔNG QUAN (DASHBOARD)
   // ==========================================================================
   function renderDashboard() {
-    const revenue = orders.filter(o => o.status !== 'Đã huỷ').reduce((s, o) => s + o.total, 0);
+    // TASK 1: Chỉ tính doanh thu từ các đơn ĐÃ GIAO (thực tế thu được)
+    const revenue = orders.filter(o => o.status === 'Đã giao').reduce((s, o) => s + o.total, 0);
     const activeProds = products.filter(p => !p.isDeleted);
+    // TASK 1: Chỉ đếm khách hàng đang HOẠT ĐỘNG (chưa bị khóa)
+    const activeCustomers = customers.filter(c => !c.locked);
+    // TASK 1: Dùng stockWarningThreshold động, không hardcode 10
     const outOfStockList = activeProds.filter(p => (Number(p.stock) || 0) <= 0);
-    const lowStockList = activeProds.filter(p => (Number(p.stock) || 0) > 0 && (Number(p.stock) || 0) <= 10);
+    const lowStockList = activeProds.filter(p => (Number(p.stock) || 0) > 0 && (Number(p.stock) || 0) <= stockWarningThreshold);
     const warningList = [...outOfStockList, ...lowStockList];
-    const maxSold = Math.max(...activeProds.map(p => p.sold || 0), 1);
+    // TASK 1: Sắp xếp sản phẩm bán chạy theo số lượng đã bán giảm dần
+    const sortedBySold = [...activeProds].sort((a, b) => (b.sold || 0) - (a.sold || 0));
+    const maxSold = Math.max(...sortedBySold.map(p => p.sold || 0), 1);
 
-    const bestsellersHtml = activeProds.slice(0, 7).map(p => {
+    const bestsellersHtml = sortedBySold.slice(0, 7).map(p => {
       const pct = Math.round(((p.sold || 0) / maxSold) * 100);
       return `
         <div style="margin-bottom: 12px;">
@@ -323,16 +326,16 @@ function initAdminPortal(options = {}) {
         <div class="kpi-card">
           <div class="kpi-label">Doanh thu tích lũy</div>
           <div class="kpi-value">${vnd(revenue)}</div>
-          <div class="kpi-change positive">+12,4% so với tháng trước</div>
+          <div class="kpi-change positive">Tổng giá trị đơn đã giao</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Tổng đơn hàng</div>
           <div class="kpi-value">${orders.length}</div>
-          <div class="kpi-change positive">+5 đơn hôm nay</div>
+          <div class="kpi-change positive">${orders.filter(o => o.status === 'Chờ xác nhận').length} đơn chờ xác nhận</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Khách hàng</div>
-          <div class="kpi-value">${customers.length}</div>
+          <div class="kpi-value">${activeCustomers.length}</div>
           <div class="kpi-change positive">Đang hoạt động</div>
         </div>
         <div class="kpi-card">
@@ -1797,7 +1800,8 @@ function initAdminPortal(options = {}) {
     if (!list || list.length === 0) {
       return `<tr><td colspan="8" class="text-center" style="padding: 24px; color: var(--color-ink-3);">Không tìm thấy đơn hàng nào.</td></tr>`;
     }
-    const statuses = ['Mới đặt', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã huỷ'];
+    // TASK 1 & 2: Luồng trạng thái chuẩn mới: Chờ xác nhận | Đã xác nhận | Đang giao | Đã giao | Đã huỷ
+    const statuses = ['Chờ xác nhận', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã huỷ'];
     return list.map(o => `
       <tr>
         <td><b style="font-family: var(--font-mono); font-size: 12px; color: var(--color-ink);">#${o.id}</b></td>
@@ -1852,7 +1856,7 @@ function initAdminPortal(options = {}) {
     const list = getFilteredOrderList();
     const page = paginateAdminList('orders', list);
 
-    const statuses = ['Mới đặt', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã huỷ'];
+    const statuses = ['Chờ xác nhận', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã huỷ'];
 
     return `
       <div class="admin-toolbar" style="margin-bottom: 20px;">
@@ -2075,7 +2079,12 @@ function initAdminPortal(options = {}) {
       return `
         <tr class="inventory-product-row" onclick="toggleStockAccordion(${product.id})" aria-expanded="${expanded}">
           <td><span style="font-family:var(--font-mono);font-size:12px;">${product.code}</span></td>
-          <td><span class="accordion-caret" style="display:inline-block;transform:rotate(${expanded ? '90deg' : '0deg'});transition:transform .2s;">&#9658;</span> <b style="color:var(--color-ink);">${product.name}</b><span style="color:var(--color-ink-3);"> · ${product.variants.length} SKU</span></td>
+          <td>
+            <!-- TASK 2: Màu caret xanh giống tab Giá bán, đổi SKU → Phiên bản -->
+            <span class="accordion-caret" style="display:inline-block;transform:rotate(${expanded ? '90deg' : '0deg'});transition:transform .2s;color:var(--color-brand-700);">&#9658;</span>
+            <b style="color:var(--color-ink);">${product.name}</b>
+            <span style="color:var(--color-ink-3);"> · ${product.variants.length} Phiên bản</span>
+          </td>
           <td class="text-center">${product.imported}</td>
           <td class="text-center">${product.sold}</td>
           <td class="text-center"><b style="font-size:16px;">${product.stock}</b></td>
@@ -2628,7 +2637,8 @@ function initAdminPortal(options = {}) {
             variants: formVariants
           };
 
-          products.unshift(newProduct);
+          // TASK 3: Thêm vào cuối danh sách (sắp xếp tăng dần theo ID)
+          products.push(newProduct);
           showToast(`Đã tạo mới sản phẩm ${newProduct.code} thành công!`);
         }
 
@@ -2824,7 +2834,8 @@ function initAdminPortal(options = {}) {
       items: receiptModalItems
     };
 
-    receipts.unshift(newReceipt);
+    // TASK 3: Thêm vào cuối (sắp xếp tăng dần theo ID)
+    receipts.push(newReceipt);
     saveReceipts(receipts);
 
     showReceiptModal = false;
