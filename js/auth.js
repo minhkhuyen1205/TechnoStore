@@ -149,16 +149,13 @@ function initAuthPage(options = {}) {
         return;
       }
 
-      // Kiểm tra tài khoản quản trị trước khi đối chiếu thông tin khách hàng.
+      // TASK 6: Chặn tài khoản Admin đăng nhập vào trang User
       const normalizedIdentifier = identifier.toLowerCase();
       const isAdminIdentifier = normalizedIdentifier === 'admin' || normalizedIdentifier === 'admin@technostore.vn';
       const isAdminPassword = password === 'admin123' || password === '123';
       if (isAdminIdentifier && isAdminPassword) {
-        setAdminUser(true);
-        showCustomDialog('Đăng nhập Quản trị viên thành công!', 'Thành công', 'success');
-        setTimeout(() => {
-          window.location.href = `${basePath}view/admin.html`;
-        }, 1200);
+        // TASK 6: Hiển thị lỗi - không cho phép đăng nhập admin tại form User
+        showCustomDialog('Tài khoản không hợp lệ hoặc sai mật khẩu!', 'Đăng nhập thất bại', 'error');
         return;
       }
 
@@ -305,6 +302,10 @@ function initProfilePage(options = {}) {
   // Hỗ trợ mở trực tiếp một đơn vừa đặt từ trang thanh toán.
   const focusedOrderId = urlParams.get('orderId');
 
+  // Luồng trạng thái chuẩn mới: Tất cả | Chờ xác nhận | Đã xác nhận | Đang giao | Đã giao | Đã huỷ
+  let activeOrderStatus = '';
+  const ORDER_STATUSES = ['Tất cả', 'Chờ xác nhận', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã huỷ'];
+
   function render() {
     // Luôn lấy dữ liệu mới nhất từ LocalStorage của user hiện tại
     const customers = typeof getCustomers === 'function' ? getCustomers() : [];
@@ -338,10 +339,15 @@ function initProfilePage(options = {}) {
       ? userOrders.filter(order => String(order.id) === focusedOrderId)
       : userOrders;
 
-    if (displayedOrders.length === 0) {
+    // TASK 4: lọc đơn hàng theo trạng thái đang chọn
+    const filteredOrders = activeOrderStatus
+      ? displayedOrders.filter(o => o.status === activeOrderStatus)
+      : displayedOrders;
+
+    if (filteredOrders.length === 0) {
       ordersHtml = `
         <div class="empty-state-box" style="padding: 48px 20px; text-align: center;">
-          <p style="color: var(--color-ink-3); font-size: 15px;">${focusedOrderId ? 'Không tìm thấy đơn hàng vừa đặt trong tài khoản này.' : 'Bạn chưa có đơn hàng nào.'}</p>
+          <p style="color: var(--color-ink-3); font-size: 15px;">${focusedOrderId ? 'Không tìm thấy đơn hàng vừa đặt trong tài khoản này.' : 'Không có đơn hàng nào trong mục này.'}</p>
           <a href="${homeUrl}" class="btn btn-primary btn-sm" style="margin-top: 12px;">Khám phá sản phẩm ngay</a>
         </div>
       `;
@@ -350,7 +356,7 @@ function initProfilePage(options = {}) {
         <div style="margin-bottom: 16px;">
           <a href="profile.html?tab=orders" class="btn btn-secondary btn-sm">Xem tất cả lịch sử đơn hàng</a>
         </div>
-      ` : ''}${displayedOrders.map(o => {
+      ` : ''}${filteredOrders.map(o => {
         const tone = typeof getStatusTone === 'function' ? getStatusTone(o.status) : 'neutral';
 
         const itemsHtml = (o.items || []).map(it => {
@@ -414,9 +420,14 @@ function initProfilePage(options = {}) {
               <span style="font-size: 14px; color: var(--color-ink-3);">Tổng tiền thanh toán</span>
               <span class="order-total-price">${vnd(o.total)}</span>
             </div>
-            ${o.status === 'Mới đặt' ? `
-              <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
-                <button type="button" class="btn btn-ghost btn-sm" style="color: #dc2626;" onclick="handleCustomerCancelOrder('${o.id}')">Hủy đơn</button>
+            ${o.status === 'Chờ xác nhận' ? `
+              <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+                <button type="button" class="btn btn-ghost btn-sm" style="color: #dc2626; border: 1px solid #dc2626; border-radius: 8px; padding: 6px 16px; font-weight: 600;" onclick="handleCustomerCancelOrder('${o.id}')">Hủy đơn</button>
+              </div>
+            ` : ''}
+            ${o.status === 'Đang giao' ? `
+              <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+                <button type="button" class="btn btn-primary btn-sm" style="font-weight: 600;" onclick="handleCustomerConfirmReceived('${o.id}')">&#10003; Đã nhận được hàng</button>
               </div>
             ` : ''}
           </div>
@@ -503,6 +514,11 @@ function initProfilePage(options = {}) {
           <div>
             <!-- Tab 1: Orders -->
             ${activeTab === 'orders' ? `
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;" id="profileOrderFilterPills">
+                ${ORDER_STATUSES.map(s => `
+                  <button type="button" class="cat-pill-btn ${((!activeOrderStatus && s === 'Tất cả') || activeOrderStatus === s) ? 'active' : ''}" onclick="switchOrderStatus('${s}')">${s}</button>
+                `).join('')}
+              </div>
               <div class="orders-list-wrap">
                 ${ordersHtml}
               </div>
@@ -548,8 +564,9 @@ function initProfilePage(options = {}) {
     `;
   }
 
-  window.switchProfileTab = (tab) => {
-    activeTab = tab;
+  window.switchOrderStatus = (status) => {
+    activeOrderStatus = status === 'Tất cả' ? '' : status;
+    activeTab = 'orders';
     render();
   };
 
