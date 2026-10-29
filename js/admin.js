@@ -1861,23 +1861,6 @@ function initAdminPortal(options = {}) {
     const statuses = ['Chờ xác nhận', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã huỷ'];
 
     return `
-      <!-- Thanh lọc trạng thái đơn hàng dạng Button Chips đồng bộ với User -->
-      <div class="order-status-chips-wrap" style="margin-bottom: 16px;">
-        ${['Tất cả', ...statuses].map(st => {
-          const val = st === 'Tất cả' ? '' : st;
-          const isActive = (!orderStatusFilter && st === 'Tất cả') || (orderStatusFilter === st);
-          return `
-            <button 
-              type="button" 
-              class="order-filter-chip ${isActive ? 'active' : ''}" 
-              onclick="handleFilterOrderStatus('${val}')"
-            >
-              ${st}
-            </button>
-          `;
-        }).join('')}
-      </div>
-
       <div class="admin-toolbar" style="margin-bottom: 20px;">
         <div class="admin-search-wrap" style="flex: 1; max-width: 380px;">
           <img src="${iconPath}tim-kiem.svg" class="icon icon-16" alt="" />
