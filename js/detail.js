@@ -188,23 +188,23 @@ function renderVariantSelectionChips(p) {
         </div>
         <div class="variant-chips-grid">
           ${romList.map(rom => {
-            const isActive = rom === selectedRom;
+      const isActive = rom === selectedRom;
 
-            // Kiểm tra bôi xám nút ROM:
-            // - Nếu đã chọn Color: Chỉ mở các nút ROM có tồn kho thuộc Color đó.
-            // - Nếu chưa chọn Color: Mở toàn bộ nút ROM có tồn kho trên toàn sản phẩm.
-            const isDisabled = selectedColor
-              ? !p.variants.some(v => v.color === selectedColor && v.rom === rom && (Number(v.stock) || 0) > 0)
-              : !p.variants.some(v => v.rom === rom && (Number(v.stock) || 0) > 0);
+      // Kiểm tra bôi xám nút ROM:
+      // - Nếu đã chọn Color: Chỉ mở các nút ROM có tồn kho thuộc Color đó.
+      // - Nếu chưa chọn Color: Mở toàn bộ nút ROM có tồn kho trên toàn sản phẩm.
+      const isDisabled = selectedColor
+        ? !p.variants.some(v => v.color === selectedColor && v.rom === rom && (Number(v.stock) || 0) > 0)
+        : !p.variants.some(v => v.rom === rom && (Number(v.stock) || 0) > 0);
 
-            const variantWithRom = p.variants.find(v => v.rom === rom && (selectedColor ? v.color === selectedColor : true))
-              || p.variants.find(v => v.rom === rom);
-            const ramVal = (variantWithRom && variantWithRom.ram && variantWithRom.ram !== 'Tiêu chuẩn')
-              ? variantWithRom.ram
-              : (p.ram && p.ram !== 'Tiêu chuẩn' ? p.ram : '');
-            const ramRomLabel = ramVal ? `${ramVal}/${rom}` : rom;
+      const variantWithRom = p.variants.find(v => v.rom === rom && (selectedColor ? v.color === selectedColor : true))
+        || p.variants.find(v => v.rom === rom);
+      const ramVal = (variantWithRom && variantWithRom.ram && variantWithRom.ram !== 'Tiêu chuẩn')
+        ? variantWithRom.ram
+        : (p.ram && p.ram !== 'Tiêu chuẩn' ? p.ram : '');
+      const ramRomLabel = ramVal ? `${ramVal}/${rom}` : rom;
 
-            return `
+      return `
               <button
                 type="button"
                 class="variant-chip-btn ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}"
@@ -215,7 +215,7 @@ function renderVariantSelectionChips(p) {
                 <b>${ramRomLabel}</b>
               </button>
             `;
-          }).join('')}
+    }).join('')}
         </div>
       </div>
     `;
@@ -235,18 +235,18 @@ function renderVariantSelectionChips(p) {
         </div>
         <div class="variant-chips-grid">
           ${colorList.map(color => {
-            const isActive = color === selectedColor;
+      const isActive = color === selectedColor;
 
-            // Kiểm tra bôi xám nút Màu sắc:
-            // - Nếu vừa click nhóm ROM và đang chọn ROM: Chỉ mở các Màu có tồn kho thuộc ROM đó.
-            // - Ngược lại: Mở toàn bộ nút Màu sắc có tồn kho trên toàn sản phẩm.
-            const isDisabled = (lastSelectedGroup === 'rom' && selectedRom)
-              ? !p.variants.some(v => v.rom === selectedRom && v.color === color && (Number(v.stock) || 0) > 0)
-              : !p.variants.some(v => v.color === color && (Number(v.stock) || 0) > 0);
+      // Kiểm tra bôi xám nút Màu sắc:
+      // - Nếu vừa click nhóm ROM và đang chọn ROM: Chỉ mở các Màu có tồn kho thuộc ROM đó.
+      // - Ngược lại: Mở toàn bộ nút Màu sắc có tồn kho trên toàn sản phẩm.
+      const isDisabled = (lastSelectedGroup === 'rom' && selectedRom)
+        ? !p.variants.some(v => v.rom === selectedRom && v.color === color && (Number(v.stock) || 0) > 0)
+        : !p.variants.some(v => v.color === color && (Number(v.stock) || 0) > 0);
 
-            const dotColor = colorMap[color] || '#8c867b';
+      const dotColor = colorMap[color] || '#8c867b';
 
-            return `
+      return `
               <button
                 type="button"
                 class="variant-chip-btn ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}"
@@ -258,7 +258,7 @@ function renderVariantSelectionChips(p) {
                 <span>${color}</span>
               </button>
             `;
-          }).join('')}
+    }).join('')}
         </div>
       </div>
     `;
@@ -287,7 +287,7 @@ function handleSelectRom(rom) {
     );
 
     const hasCurrentMatch = validColorVariants.some(v => v.color === selectedColor);
-    
+
     // Nếu chưa chọn Màu HOẶC Màu đang chọn không có ở mức ROM này
     // -> TỰ ĐỘNG CHỌN MÀU KHIỂN DỤNG ĐẦU TIÊN TƯƠNG ỨNG
     if ((!selectedColor || !hasCurrentMatch) && validColorVariants.length > 0) {
@@ -769,6 +769,30 @@ function handleDetailBuyNow() {
 
   window.location.href = 'checkout.html';
 }
+// chặn thêm vào giỏ hàng khi chưa đăng nhập
+function handleDetailAddToCart() {
+  if (!validateVariantSelection()) return;
+
+  // Bắt buộc đăng nhập theo đúng barem chấm thi
+  const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+  if (!currentUser) {
+    showCustomDialog(
+      'Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng!',
+      'Yêu cầu đăng nhập',
+      'warning',
+      () => { window.location.href = `login.html?redirect=cart.html`; }
+    );
+    return;
+  }
+
+  const res = addToCart(selectedVariant.sku, selectedQty);
+  if (res.success) {
+    showToast(`Đã thêm ${selectedQty} × ${currentProduct.name} (${selectedVariant.color}${selectedVariant.rom ? " · " + selectedVariant.rom : ""}) vào giỏ hàng!`);
+  } else {
+    showCustomDialog(res.message, 'Không thể thêm vào giỏ', 'error');
+  }
+}
+
 
 /**
  * Chuyển đổi tab Thông số / Mô tả
