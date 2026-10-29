@@ -7,6 +7,23 @@
  * 3. Khi bấm "Tiến hành thanh toán": Chuyển sang luồng thanh toán giỏ hàng (xóa cờ mua ngay tạm)
  */
 function initCartPage(options = {}) {
+  const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+  if (!currentUser) {
+    container.innerHTML = `
+    <div class="cart-empty-view pop">
+      <div class="cart-empty-icon-circle">
+        <img src="${basePath}assets/icon/con-nguoi.svg" class="icon icon-32" alt="Đăng nhập" />
+      </div>
+      <h1 class="cart-empty-title">Bạn chưa đăng nhập</h1>
+      <p class="cart-empty-text">Vui lòng đăng nhập tài khoản TechnoStore để sử dụng giỏ hàng và đồng bộ sản phẩm.</p>
+      <a href="${customerPath}login.html?redirect=cart.html" class="btn btn-primary btn-md" style="margin-top: 24px;">
+        Đăng nhập ngay
+      </a>
+    </div>
+  `;
+    return;
+  }
+
   const container = document.getElementById('cartPageContent');
   if (!container) return;
 
