@@ -1456,13 +1456,13 @@ function initAdminPortal(options = {}) {
         <div class="modal-overlay pop">
           <div class="modal-box modal-wide" style="max-width: 860px;">
             <div class="modal-header">
-              <h3 class="modal-title">Tạo phiếu nhập hàng (Luân chuyển kho thực tế)</h3>
+              <h3 class="modal-title">Tạo phiếu nhập hàng </h3>
               <button class="modal-close-btn" onclick="closeReceiptModal()">✕</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px;">
               <div style="display: grid; gap: 16px; grid-template-columns: 1fr 1fr;">
                 <div class="form-field" style="margin:0;">
-                  <label class="form-label">Mã phiếu (Tự sinh & Khóa)</label>
+                  <label class="form-label">Mã phiếu </label>
                   <input type="text" class="input-control variant-stock-locked" value="${nextReceiptId}" disabled readonly />
                 </div>
                 <div class="form-field" style="margin:0;">
@@ -1474,7 +1474,7 @@ function initAdminPortal(options = {}) {
               <!-- Thêm mặt hàng vào phiếu -->
               <div style="background: var(--color-surface); padding: 16px; border-radius: var(--radius-xl); border: 1px solid var(--color-line);">
                 <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--color-ink);">
-                  Chọn phiên bản (SKU) cần nhập thêm:
+                  Chọn phiên bản sản phẩm cần nhập :
                 </div>
                 <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                   <div class="select-wrapper" style="flex: 2; min-width: 240px;">
@@ -1521,7 +1521,7 @@ function initAdminPortal(options = {}) {
                 onclick="handleFinishReceipt()"
                 ${!isReceiptValid ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}
               >
-                Hoàn tất Phiếu Nhập Hàng (Cộng dồn Stock)
+                Tạo Phiếu Nhập Hàng 
               </button>
             </div>
           </div>
